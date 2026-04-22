@@ -17,6 +17,11 @@ class WalkLeg:
     type: str = "walk"
     distance_m: float = 0.0
     duration_s: float = 0.0
+    geometry: Optional[dict] = None  # GeoJSON LineString
+    
+    @property
+    def mode(self):
+        return "walk"
 
 
 @dataclass
@@ -30,6 +35,31 @@ class PtLeg:
     to_stop: str = ""
     num_stops: int = 0
     stops: list = field(default_factory=list)
+    geometry: Optional[dict] = None  # GeoJSON LineString
+    
+    @property
+    def mode(self):
+        return "pt"
+    
+    @property
+    def distance_m(self):
+        """Calculate distance from stops if available"""
+        # This would need to be calculated from geometry
+        # For now, return 0 or estimate from stop distances
+        return 0.0
+    
+    @property
+    def duration_s(self):
+        """Calculate duration from departure/arrival times"""
+        if self.departure_time and self.arrival_time:
+            try:
+                from datetime import datetime
+                dep = datetime.fromisoformat(self.departure_time.replace('Z', '+00:00'))
+                arr = datetime.fromisoformat(self.arrival_time.replace('Z', '+00:00'))
+                return (arr - dep).total_seconds()
+            except:
+                pass
+        return 0.0
 
 
 @dataclass
@@ -52,6 +82,16 @@ class Route:
     @property
     def distance_km(self) -> float:
         return round(self.distance_m / 1000, 2)
+    
+    @property
+    def geometry(self):
+        """Return overall route geometry in GeoJSON format"""
+        if self.points and 'coordinates' in self.points:
+            return {
+                "type": "LineString",
+                "coordinates": self.points['coordinates']
+            }
+        return None
 
 
 # ── Client ────────────────────────────────────────────────────────────────────
@@ -99,6 +139,7 @@ class GraphHopperClient:
             "pt.limit_solutions":         limit_solutions,
             "locale":                     "en",
             "points_encoded":             False,
+            "details":                    ["time", "distance"],  # Request detailed info
         }
         return self._send(params)
 
@@ -137,6 +178,47 @@ class GraphHopperClient:
 
         return [self._parse_path(p) for p in data["paths"]]
 
+    def _extract_leg_geometry(self, leg_data: dict, overall_points: dict) -> Optional[dict]:
+        """
+        Extract geometry for a specific leg.
+
+        Priority:
+        1. Use leg_data['geometry'] if GraphHopper provides it
+        2. Use leg_data['points'] if present
+        3. For PT legs, build a fallback LineString from stop geometries
+        4. Otherwise return None
+        """
+
+        # 1. Direct geometry from the leg
+        geom = leg_data.get("geometry")
+        if isinstance(geom, dict) and geom.get("type") == "LineString" and geom.get("coordinates"):
+            return geom
+
+        # 2. Some responses may use 'points'
+        points = leg_data.get("points")
+        if isinstance(points, dict) and points.get("coordinates"):
+            return {
+                "type": "LineString",
+                "coordinates": points["coordinates"]
+            }
+
+        # 3. PT fallback: build shape from stop geometries
+        if leg_data.get("type") == "pt":
+            coords = []
+            for stop in leg_data.get("stops", []):
+                stop_geom = stop.get("geometry", {})
+                if isinstance(stop_geom, dict) and stop_geom.get("coordinates"):
+                    lon, lat = stop_geom["coordinates"][:2]
+                    coords.append([lon, lat])
+
+            if len(coords) >= 2:
+                return {
+                    "type": "LineString",
+                    "coordinates": coords
+                }
+
+        # 4. No reliable geometry found
+        return None
     def _parse_path(self, path: dict) -> Route:
         # transfers can be -1 in GH when the journey is walk-only (no PT legs).
         # Clamp to 0 so the display makes sense.
@@ -150,12 +232,15 @@ class GraphHopperClient:
             points     = path.get("points", {}),
         )
 
-        for leg in path.get("legs", []):
-            leg_type = leg.get("type", "")
+        overall_points = path.get("points", {})
+        
+        for leg_data in path.get("legs", []):
+            leg_type = leg_data.get("type", "")
+            leg_geometry = self._extract_leg_geometry(leg_data, overall_points)
 
             if leg_type == "walk":
-                distance_m = leg.get("distance", 0)
-                duration_s = leg.get("time", 0) / 1000 if leg.get("time") else 0
+                distance_m = leg_data.get("distance", 0)
+                duration_s = leg_data.get("time", 0) / 1000 if leg_data.get("time") else 0
                 
                 # If GraphHopper didn't provide duration, estimate it
                 # Walking speed: ~5 km/h = 1.39 m/s
@@ -165,24 +250,26 @@ class GraphHopperClient:
                 route.legs.append(WalkLeg(
                     distance_m = distance_m,
                     duration_s = duration_s,
+                    geometry   = leg_geometry,
                 ))
 
             elif leg_type == "pt":
-                stops     = leg.get("stops", [])
+                stops     = leg_data.get("stops", [])
                 from_stop = stops[0].get("stop_name", "?")  if stops else "?"
                 to_stop   = stops[-1].get("stop_name", "?") if stops else "?"
                 dep_time  = stops[0].get("departure_time")  if stops else None
                 arr_time  = stops[-1].get("arrival_time")   if stops else None
 
                 route.legs.append(PtLeg(
-                    route_id       = leg.get("route_id", ""),
-                    trip_headsign  = leg.get("trip_headsign", ""),
+                    route_id       = leg_data.get("route_id", ""),
+                    trip_headsign  = leg_data.get("trip_headsign", ""),
                     departure_time = dep_time,
                     arrival_time   = arr_time,
                     from_stop      = from_stop,
                     to_stop        = to_stop,
                     num_stops      = len(stops),
                     stops          = stops,
+                    geometry       = leg_geometry,
                 ))
 
         return route

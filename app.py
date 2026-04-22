@@ -45,6 +45,28 @@ def load_agent(agent_type):
     
     return Agent.from_dict(agent_data)
 
+
+def extract_leg_geometry(leg, route_points):
+    """
+    Extract geometry for a specific leg from the overall route geometry.
+    
+    For walk legs: Extract segment from route.points
+    For PT legs: Extract segment between stops from route.points
+    """
+    # route_points should be in format: {"type": "LineString", "coordinates": [[lon, lat], ...]}
+    if not route_points or not route_points.get('coordinates'):
+        return None
+    
+    coords = route_points['coordinates']  # [[lon, lat], ...]
+    
+    # For now, return the full geometry
+    # In a more sophisticated version, you'd slice this based on leg start/end
+    return {
+        "type": "LineString",
+        "coordinates": coords
+    }
+
+
 @app.route('/')
 def index():
     """Serve the main interface"""
@@ -75,6 +97,7 @@ def calculate_route():
             "available": true,
             "poi_boost": 1.2,
             "matched_pois": [...],
+            "geometry": {...},  # GeoJSON for overall route
             "legs": [...]  # Detailed leg-by-leg geometry
         },
         ...
@@ -92,7 +115,7 @@ def calculate_route():
         # Load agent
         agent = load_agent(agent_type)
         
-        # Load POIs if enabled, Empty for now, but can be extended to load from fiware
+        # Load POIs if enabled
         pois = load_pois() if pois_enabled else []
         
         # Initialize router
@@ -103,9 +126,6 @@ def calculate_route():
         )
         
         # Calculate routes
-        # IMPORTANT: Use a departure time within GTFS calendar range
-        # Your GTFS is valid: 2025-10-10 to 2026-10-09
-        # Using a fixed date within this range for reliability
         from datetime import datetime, timezone
         departure = datetime(2025, 11, 15, 9, 0, tzinfo=timezone.utc)
         
@@ -115,40 +135,51 @@ def calculate_route():
             from_lon=origin[1],
             to_lat=destination[0],
             to_lon=destination[1],
-            departure=departure.isoformat(),  # Pass as ISO string
+            departure=departure.isoformat(),
             max_walk_m=500
         )
         
         # Format response
         routes = []
         for result in results:
+            # Get overall route geometry
+            route_geometry = getattr(result.route, 'geometry', None)
+            
             # Extract leg-by-leg information for visualization
             legs_data = []
             for leg in result.route.legs:
                 leg_info = {
-                    'mode': leg.mode,
-                    'description': leg.description,
-                    'distance_m': leg.distance_m,
-                    'duration_s': leg.duration_s,
-                    'from_name': getattr(leg, 'from_name', None),
-                    'to_name': getattr(leg, 'to_name', None)
+                    'type': getattr(leg, 'type', getattr(leg, 'mode', 'unknown')),
+                    'mode': getattr(leg, 'mode', getattr(leg, 'type', 'unknown')),
+                    'distance_m': getattr(leg, 'distance_m', 0.0),
+                    'duration_s': getattr(leg, 'duration_s', 0.0),
+                    'geometry': getattr(leg, 'geometry', None),   # <-- ADD THIS
                 }
-                
-                # Add PT-specific information if this is a PT leg
+
+                if hasattr(leg, 'from_name'):
+                    leg_info['from_name'] = leg.from_name
+                if hasattr(leg, 'to_name'):
+                    leg_info['to_name'] = leg.to_name
+
                 if hasattr(leg, 'route_id'):
-                    leg_info['route_id'] = leg.route_id
+                    leg_info['route_id'] = getattr(leg, 'route_id', '')
                     leg_info['trip_headsign'] = getattr(leg, 'trip_headsign', '')
                     leg_info['departure_time'] = getattr(leg, 'departure_time', None)
                     leg_info['arrival_time'] = getattr(leg, 'arrival_time', None)
                     leg_info['from_stop'] = getattr(leg, 'from_stop', '')
                     leg_info['to_stop'] = getattr(leg, 'to_stop', '')
                     leg_info['num_stops'] = getattr(leg, 'num_stops', 0)
-                    
-                    # Add stop information for PT legs
-                    if hasattr(leg, 'stops') and leg.stops:
-                        leg_info['stops'] = leg.stops
-                
+                    leg_info['stops'] = getattr(leg, 'stops', [])  # keep stops for markers only
+
                 legs_data.append(leg_info)
+            
+            # Convert geometry to proper GeoJSON format
+            geometry_geojson = None
+            if route_geometry and 'coordinates' in route_geometry:
+                geometry_geojson = {
+                    "type": "LineString",
+                    "coordinates": route_geometry['coordinates']
+                }
             
             routes.append({
                 'rank': result.rank,
@@ -160,8 +191,8 @@ def calculate_route():
                 'available': result.available,
                 'poi_boost': round(result.poi_boost, 2),
                 'matched_pois': result.matched_pois,
-                'geometry': result.route.geometry,  # Overall route geometry
-                'legs': legs_data  # Detailed leg information
+                'geometry': geometry_geojson,  # Properly formatted GeoJSON
+                'legs': legs_data
             })
         
         return jsonify(routes)

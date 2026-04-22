@@ -44,6 +44,7 @@ class IntermodalLeg:
     stops: list = field(default_factory=list)
     departure_time: Optional[str] = None
     arrival_time: Optional[str] = None
+    geometry: Optional[dict] = None  # GeoJSON LineString
 
 
 @dataclass
@@ -234,6 +235,7 @@ class IntermodalRouter:
             duration_s  = r.duration_s,
             from_name   = f"{from_lat:.4f},{from_lon:.4f}",
             to_name     = f"{to_lat:.4f},{to_lon:.4f}",
+            geometry    = r.geometry,
         )
         return IntermodalRoute(
             label            = label,
@@ -241,7 +243,7 @@ class IntermodalRouter:
             legs             = [leg],
             total_duration_s = r.duration_s,
             total_distance_m = r.distance_m,
-            geometry         = r.points,  # Pass the GeoJSON geometry
+            geometry         = r.geometry,  # Pass the GeoJSON geometry
         )
 
     def _pt_direct(self, from_lat, from_lon,
@@ -423,6 +425,7 @@ class IntermodalRouter:
                 duration_s  = first_leg_route.duration_s,
                 from_name   = "Your location",
                 to_name     = stop_name,
+                geometry=first_leg_route.geometry,
             )
         ]
         iml_legs += self._convert_pt_legs(pt_route)
@@ -483,18 +486,18 @@ class IntermodalRouter:
         return True, ""
 
     def _convert_pt_legs(self, route: Route) -> list[IntermodalLeg]:
-        """Convert GraphHopper Route legs into IntermodalLeg objects."""
         result = []
         for gh_leg in route.legs:
             if isinstance(gh_leg, WalkLeg):
                 result.append(IntermodalLeg(
-                    mode        = "walk",
-                    description = "🚶 Walk",
-                    distance_m  = gh_leg.distance_m,
-                    duration_s  = gh_leg.duration_s,
+                    mode="walk",
+                    description="🚶 Walk",
+                    distance_m=gh_leg.distance_m,
+                    duration_s=gh_leg.duration_s,
+                    geometry=gh_leg.geometry,   # <-- KEEP IT
                 ))
+
             elif isinstance(gh_leg, PtLeg):
-                # Calculate duration from departure and arrival times if available
                 duration_s = 0
                 if gh_leg.departure_time and gh_leg.arrival_time:
                     try:
@@ -504,41 +507,45 @@ class IntermodalRouter:
                         duration_s = (arr - dep).total_seconds()
                     except:
                         pass
-                
-                # Calculate distance from stops if available
+
                 distance_m = 0
-                if gh_leg.stops and len(gh_leg.stops) >= 2:
-                    # Sum distances between consecutive stops
+                if gh_leg.geometry and "coordinates" in gh_leg.geometry:
+                    coords = gh_leg.geometry["coordinates"]
+                    for i in range(len(coords) - 1):
+                        lon1, lat1 = coords[i]
+                        lon2, lat2 = coords[i + 1]
+                        distance_m += self._haversine_km(lat1, lon1, lat2, lon2) * 1000
+                elif gh_leg.stops and len(gh_leg.stops) >= 2:
                     for i in range(len(gh_leg.stops) - 1):
                         try:
                             stop1 = gh_leg.stops[i]
                             stop2 = gh_leg.stops[i + 1]
                             coords1 = stop1.get('geometry', {}).get('coordinates', [None, None])
                             coords2 = stop2.get('geometry', {}).get('coordinates', [None, None])
-                            if coords1[0] and coords2[0]:
-                                # lon, lat order in GeoJSON
-                                dist_km = self._haversine_km(coords1[1], coords1[0], coords2[1], coords2[0])
-                                distance_m += dist_km * 1000
+                            if coords1[0] is not None and coords2[0] is not None:
+                                distance_m += self._haversine_km(coords1[1], coords1[0], coords2[1], coords2[0]) * 1000
                         except:
                             pass
-                
+
                 result.append(IntermodalLeg(
-                    mode           = "pt",
-                    description    = f"🚌 {gh_leg.route_id}" if gh_leg.route_id else "🚌 PT",
-                    distance_m     = distance_m,
-                    duration_s     = duration_s,
-                    route_id       = gh_leg.route_id,
-                    trip_headsign  = gh_leg.trip_headsign,
-                    from_name      = gh_leg.from_stop,
-                    to_name        = gh_leg.to_stop,
-                    from_stop      = gh_leg.from_stop,
-                    to_stop        = gh_leg.to_stop,
-                    num_stops      = gh_leg.num_stops,
-                    stops          = gh_leg.stops,
-                    departure_time = gh_leg.departure_time,
-                    arrival_time   = gh_leg.arrival_time,
+                    mode="pt",
+                    description=f"🚌 {gh_leg.route_id}" if gh_leg.route_id else "🚌 PT",
+                    distance_m=distance_m,
+                    duration_s=duration_s,
+                    route_id=gh_leg.route_id,
+                    trip_headsign=gh_leg.trip_headsign,
+                    from_name=gh_leg.from_stop,
+                    to_name=gh_leg.to_stop,
+                    from_stop=gh_leg.from_stop,
+                    to_stop=gh_leg.to_stop,
+                    num_stops=gh_leg.num_stops,
+                    stops=gh_leg.stops,
+                    departure_time=gh_leg.departure_time,
+                    arrival_time=gh_leg.arrival_time,
+                    geometry=gh_leg.geometry,   # <-- KEEP IT
                 ))
         return result
+
 
     @staticmethod
     def _haversine_km(lat1, lon1, lat2, lon2) -> float:
