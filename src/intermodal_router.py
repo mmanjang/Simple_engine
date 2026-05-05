@@ -69,7 +69,7 @@ class IntermodalLeg:
     stops: list = field(default_factory=list)
     departure_time: Optional[str] = None
     arrival_time: Optional[str] = None
-    geometry: Optional[dict] = None   # GeoJSON LineString if available
+    geometry: Optional[dict] = None   # GeoJSON lineString if available
 
 
 @dataclass
@@ -156,7 +156,7 @@ class IntermodalRouter:
         self,
         client: GraphHopperClient,
         departure: Optional[str] = None,
-        max_walk_m: int = 500,
+        max_walk_m: int = 1500,
         policy: Optional[IntermodalPolicy] = None,
         keep_infeasible: bool = False,
     ):

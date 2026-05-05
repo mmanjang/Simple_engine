@@ -120,7 +120,7 @@ class GraphHopperClient:
 
     def route_pt(self, from_lat, from_lon, to_lat, to_lon,
                  departure_time=None, arrive_by=False,
-                 max_walk_meters=500, limit_solutions=3):
+                 max_walk_meters=1500, limit_solutions=3):
 
         if departure_time is None:
             departure_time = datetime.now(tz=timezone.utc)

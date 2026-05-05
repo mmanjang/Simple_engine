@@ -136,7 +136,7 @@ def calculate_route():
             to_lat=destination[0],
             to_lon=destination[1],
             departure=departure.isoformat(),
-            max_walk_m=500
+            max_walk_m=1500
         )
         
         # Format response
