@@ -1,25 +1,32 @@
 graphhopper:
-  datareader.file: /data/sachsen-anhalt-260216.osm.pbf
+  datareader.file: /data/magdeburg.osm.pbf
   gtfs.file: /data/magdeburg_gtfs.zip
   graph.location: /data/graph-cache
 
+  import.osm.ignored_highways: motorway,trunk
+
   profiles:
     - name: car
-      vehicle: car
-      weighting: fastest
-
+      custom_model_files: [car.json]
     - name: bike
-      vehicle: bike
-      weighting: fastest
-
+      custom_model_files: [bike.json]
     - name: foot
-      vehicle: foot
-      weighting: fastest
+      custom_model_files: [foot.json]
+    - name: pt                          # ← add this back
+      custom_model_files: [foot.json]
 
   profiles_ch:
     - profile: car
     - profile: bike
     - profile: foot
+
+  graph.encoded_values: car_access, car_average_speed, bike_access, bike_average_speed,
+    bike_priority, foot_access, foot_average_speed, foot_priority, road_class,
+    road_environment, max_speed, road_access, country, mtb_rating, hike_rating, roundabout
+
+  routing:
+    non_ch:
+      max_visited_nodes: 1000000        # ← add this back
 
 server:
   application_connectors:
