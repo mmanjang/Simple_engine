@@ -1,35 +1,3 @@
-"""
-intermodal_router_v2.py
-───────────────────────
-Behavior-aware intermodal routing engine.
-
-Purpose
--------
-Build realistic multimodal route candidates before the personalised value model
-scores them. This version improves the original intermodal router by using both:
-
-  1. Trip distance
-  2. Transfer burden
-
-The goal is not only to generate technically feasible routes, but to avoid
-behaviorally unrealistic options such as complex PT routes for very short trips.
-
-Architecture
-------------
-GraphHopperClient
-    ↓
-IntermodalRouter
-    - chooses candidate strategies based on distance
-    - builds direct and intermodal routes
-    - evaluates transfer realism
-    - computes a generalized journey cost
-    ↓
-PersonalisedRouter
-    - scores candidates using psychological value weights
-
-This file is intended to replace your existing intermodal_router.py after testing.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -56,7 +24,7 @@ class IntermodalLeg:
     """One leg of an intermodal journey."""
 
     mode: str                         # "walk" | "bike" | "car" | "pt"
-    description: str                  # human-readable label
+    description: str                  
     distance_m: float = 0.0
     duration_s: float = 0.0
     route_id: str = ""
@@ -105,8 +73,7 @@ class IntermodalPolicy:
     """
     Policy parameters for behavior-aware candidate generation.
 
-    These values are intentionally explicit so they can later be justified,
-    tuned, or learned from survey/validation data.
+    These values are intentionally explicit but would later be derived form the distance feasibility curves and transfer tolerance observed in the agent population. They are not final scientific claims, just reasonable starting points for improved candidate generation.
     """
 
     # Distance regimes in km
@@ -141,16 +108,6 @@ class IntermodalPolicy:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class IntermodalRouter:
-    """
-    Builds realistic intermodal journey candidates.
-
-    Improvements over the earlier version:
-    - Strategy selection depends on distance regime.
-    - Transfer tolerance depends on trip distance.
-    - Routes are evaluated using generalized journey cost.
-    - Infeasible routes can be retained for debugging with explanations.
-    - Geometry is preserved at leg level when available.
-    """
 
     def __init__(
         self,
@@ -246,11 +203,7 @@ class IntermodalRouter:
     # ──────────────────────────────────────────────────────────────────────
 
     def _max_transfers_for_distance(self, distance_km: float) -> int:
-        """
-        Distance-aware transfer tolerance.
-
-        Short trips should be simple. Longer trips can justify more transfers.
-        """
+        
         p = self.policy
         if distance_km <= p.very_short_km:
             return p.max_transfers_very_short
@@ -671,7 +624,6 @@ class IntermodalRouter:
         route.generalized_cost_s = route.total_duration_s + transfer_penalty_s + boarding_penalty_s
 
     def _compute_realism_score(self, route: IntermodalRoute, distance_km: float) -> float:
-        """0–1 score for how behaviorally plausible the route is."""
         score = 1.0
 
         # Transfer burden
@@ -714,16 +666,11 @@ class IntermodalRouter:
 
     # ──────────────────────────────────────────────────────────────────────
     # Feasibility helpers
+    # Introduce feasibility distance thresholds based on inferred agent profile type. This allows
     # ──────────────────────────────────────────────────────────────────────
 
     def check_feasibility(self, route: IntermodalRoute, agent: Agent) -> tuple[bool, str]:
-        """
-        Profile-sensitive feasibility checks.
-
-        This keeps your existing PersonalisedRouter compatible: it already calls
-        check_feasibility(route, agent). The thresholds here are intentionally
-        practical rather than final scientific claims.
-        """
+        
         profile_type = "default"
         if hasattr(agent, "infer_profile_type"):
             try:

@@ -1,8 +1,5 @@
-"""
-graphhopper_client.py
-─────────────────────
-Low-level client that talks directly to the GraphHopper HTTP server.
-"""
+# Low-level client that talks directly to the GraphHopper HTTP server.
+
 
 import requests
 from datetime import datetime, timezone
@@ -10,8 +7,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
-# ── Data classes ──────────────────────────────────────────────────────────────
-
+# Data classes
 @dataclass
 class WalkLeg:
     type: str = "walk"
@@ -45,7 +41,7 @@ class PtLeg:
     def distance_m(self):
         """Calculate distance from stops if available"""
         # This would need to be calculated from geometry
-        # For now, return 0 or estimate from stop distances
+        # For now, return 0 or estimate from stop distances and come back to it later
         return 0.0
     
     @property
@@ -94,7 +90,7 @@ class Route:
         return None
 
 
-# ── Client ────────────────────────────────────────────────────────────────────
+#  Client 
 
 class GraphHopperClient:
 
@@ -143,7 +139,7 @@ class GraphHopperClient:
         }
         return self._send(params)
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    #  Internal methods
 
     def _route_standard(self, from_lat, from_lon, to_lat, to_lon, profile):
         params = {
@@ -179,15 +175,6 @@ class GraphHopperClient:
         return [self._parse_path(p) for p in data["paths"]]
 
     def _extract_leg_geometry(self, leg_data: dict, overall_points: dict) -> Optional[dict]:
-        """
-        Extract geometry for a specific leg.
-
-        Priority:
-        1. Use leg_data['geometry'] if GraphHopper provides it
-        2. Use leg_data['points'] if present
-        3. For PT legs, build a fallback LineString from stop geometries
-        4. Otherwise return None
-        """
 
         # 1. Direct geometry from the leg
         geom = leg_data.get("geometry")

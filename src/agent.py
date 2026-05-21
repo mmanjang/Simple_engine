@@ -1,39 +1,3 @@
-"""
-agent.py
-────────
-Defines the Agent class — a person with:
-  - value_weights : dict of 9 psychological value scores (0–1 normalised)
-  - beliefs       : dict of transport availability flags
-
-Agents can be loaded from a dict (e.g. direct from your psychological model
-output) or constructed manually.
-
-Example
--------
-agent = Agent.from_dict({
-    "id": "agent_001",
-    "values": {
-        "pro_environment":  1.3691 / MAX,
-        "physical_activity": 0.0,
-        ...
-    },
-    "beliefs": {
-        "owns_car":      True,
-        "owns_bike":     False,
-        "has_pt_access": True,
-    }
-})
-
-Note on normalisation
----------------------
-Your psychological model outputs raw floats (e.g. -3.5 to +2.0).
-The Agent class normalises these to [0, 1] across the agent's own value
-vector so that the weights are comparable within the agent.
-A score of 0 means this value is least important to this agent.
-A score of 1 means this value is most important.
-
-If values are already normalised, pass normalise=False.
-"""
 
 from dataclasses import dataclass, field
 from typing import Optional
@@ -43,38 +7,15 @@ from value_model import VALUE_DIMENSIONS, MODE_BELIEF_REQUIREMENTS
 @dataclass
 class Agent:
     id: str
-    value_weights: dict        # {dimension: float 0–1}
-    beliefs: dict              # {owns_car, owns_bike, has_pt_access: bool}
-    metadata: dict = field(default_factory=dict)   # any extra info
+    value_weights: dict        
+    beliefs: dict              
+    metadata: dict = field(default_factory=dict)   
 
-    # ── Constructors ──────────────────────────────────────────────────────────
+    # Constructors 
 
     @classmethod
     def from_dict(cls, data: dict, normalise: bool = True) -> "Agent":
-        """
-        Build an Agent from a raw dict as produced by the psychological model.
-
-        Expected format:
-        {
-            "id": "agent_001",                     # optional
-            "values": {
-                "pro_environment":  1.37,
-                "physical_activity": -3.52,
-                "privacy":           0.65,
-                "autonomy":          1.55,
-                "hedonism":          0.0,
-                "cost_saving":       1.35,
-                "speed":             1.64,
-                "safety":            2.04,
-                "comfort":           1.21
-            },
-            "beliefs": {
-                "owns_car":      True,
-                "owns_bike":     False,
-                "has_pt_access": True
-            }
-        }
-        """
+  
         agent_id = data.get("id", "unknown_agent")
         raw_values = data.get("values", {})
         beliefs    = data.get("beliefs", {})
@@ -106,12 +47,7 @@ class Agent:
     @staticmethod
     def _normalise(values: dict) -> dict:
         """
-        Shift and scale raw values to [0, 1].
-
-        Strategy:
-          1. Shift so the minimum becomes 0  (handles negative values)
-          2. Scale so the maximum becomes 1
-          If all values are equal, return 0.5 for all.
+        Scale the raw data if it is not already normalised to 0–1.
         """
         vals  = list(values.values())
         v_min = min(vals)
@@ -123,14 +59,10 @@ class Agent:
 
         return {k: (v - v_min) / span for k, v in values.items()}
 
-    # ── Belief helpers ────────────────────────────────────────────────────────
+    #  Belief helpers. Available options for an agents are determined by their beliefs.
 
     def available_modes(self) -> list[str]:
-        """
-        Return the list of transport modes this agent can actually use,
-        based on their beliefs.
-        Foot is always available.
-        """
+        
         available = []
         for mode, required_beliefs in MODE_BELIEF_REQUIREMENTS.items():
             if all(self.beliefs.get(b, False) for b in required_beliefs):
@@ -142,15 +74,7 @@ class Agent:
         return all(self.beliefs.get(b, False) for b in required)
     
     def infer_profile_type(self) -> str:
-        """
-        Infer agent profile type based on value weights.
-        Used for distance tolerance adjustments.
-        
-        Returns
-        -------
-        profile_type : str
-            One of: "biospheric", "altruistic", "egoistic", "hedonic"
-        """
+       
         weights = self.value_weights
         
         # Get top 2 values
@@ -179,7 +103,7 @@ class Agent:
         # Default: egoistic (most conservative distance tolerance)
         return "egoistic"
 
-    # ── Display ───────────────────────────────────────────────────────────────
+    #  Display helpers
 
     def top_values(self, n: int = 3) -> list[tuple[str, float]]:
         """Return the n most important value dimensions for this agent."""
