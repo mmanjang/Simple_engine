@@ -1,10 +1,4 @@
-"""
-routing_service.py - Stateless JSON routing service for the personalised routing engine.
 
-This module contains no terminal prompts and no printing. It accepts a cognitive
-passport plus route request data, runs the personalised router, and returns an
-API-friendly Python dict that FastAPI can serialize as JSON.
-"""
 
 from __future__ import annotations
 

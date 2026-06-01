@@ -1,12 +1,3 @@
-"""
-api.py - FastAPI wrapper for the personalised routing engine.
-
-Run locally:
-    uvicorn api:app --reload --host 0.0.0.0 --port 8000
-
-Then POST JSON to:
-    http://localhost:8000/ranked-routes
-"""
 
 from __future__ import annotations
 
