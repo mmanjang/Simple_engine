@@ -55,11 +55,12 @@ services:
     depends_on:
       - graphhopper
     ports:
-      - "5001:5000"
+      - "6001:6000"
     environment:
       GRAPHOPPER_HOST: "http://graphhopper:8989"
-      FLASK_SECRET_KEY: "change-this-secret-key-in-production"
       FLASK_ENV: "production"
+      FLASK_RUN_PORT: "6000"  
+      PYTHONPATH: "/app:/app/user_study"   # ← add this
     volumes:
       - ./user_study/study_data.db:/app/user_study/study_data.db
     command: ["python", "user_study/study_app.py"]

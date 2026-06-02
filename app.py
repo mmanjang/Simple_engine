@@ -5,11 +5,12 @@ Connects the web interface to the Python routing engine
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-import sys
-import os
+import sys, os
+
 
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+# from study_db import get_connection, init_database, seed_scenarios
 
 from agent import Agent
 from graphhopper_client import GraphHopperClient
