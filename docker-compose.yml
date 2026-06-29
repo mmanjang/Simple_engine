@@ -22,7 +22,7 @@ services:
     container_name: simple-engine-mysql
     restart: unless-stopped
     ports:
-      - "3307:3306"  #host 3307->container 3306 to avoid conflicts with local MySQL
+      - "3306:3306"  
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-simple_engine}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-simple_engine_study}
