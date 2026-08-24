@@ -7,8 +7,15 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; background: #f5f5f5; }
-    #sidebar { width: 380px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; z-index: 1000; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; flex-direction: row; background: #f5f5f5; overflow: hidden; }
+    /* Left sidebar — controls */
+    #sidebar { width: 340px; min-width: 280px; background: white; box-shadow: 2px 0 8px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow-y: auto; z-index: 1000; flex-shrink: 0; }
+    /* Map — centre column, full height */
+    #map { flex: 1; height: 100vh; min-width: 0; z-index: 1; }
+    /* Right sidebar — routes */
+    #routes-sidebar { width: 340px; min-width: 280px; background: white; box-shadow: -2px 0 8px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow-y: auto; z-index: 1000; flex-shrink: 0; }
+    .routes-sidebar-header { background: linear-gradient(135deg, #028090 0%, #00A896 100%); color: white; padding: 18px 20px; font-size: 15px; font-weight: 600; letter-spacing: 0.3px; flex-shrink: 0; }
+    .routes-sidebar-body { flex: 1; overflow-y: auto; padding: 16px; }
     .header { background: linear-gradient(135deg, #028090 0%, #00A896 100%); color: white; padding: 20px; }
     .header h1 { font-size: 20px; font-weight: 600; margin-bottom: 5px; }
     .header p { font-size: 12px; opacity: 0.9; }
@@ -39,8 +46,7 @@
     .route-stat { display: flex; align-items: center; gap: 4px; }
     .unavailable-badge, .poi-badge { display: inline-block; color: white; font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 600; margin-left: 8px; }
     .unavailable-badge { background: #ff6b6b; }
-    .poi-badge { background: #02C39A; }
-    #map { flex: 1; position: relative; }
+    /* #map handled in layout above */
     .loading { text-align: center; padding: 40px; color: #666; }
     .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #028090; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -58,10 +64,11 @@
     .suggestion-item:hover { background: #f5f5f5; }
     .suggestion-name { font-weight: 600; color: #028090; }
     .suggestion-address { font-size: 11px; color: #666; margin-top: 2px; }
-    @media (max-width: 768px) {
-      body { flex-direction: column; }
-      #sidebar { width: 100%; max-height: 50vh; }
-      #map { height: 50vh; }
+    @media (max-width: 1024px) {
+      body { flex-direction: column; overflow-y: auto; height: auto; }
+      #sidebar { width: 100%; min-width: unset; max-height: none; overflow-y: visible; box-shadow: none; border-bottom: 2px solid #e0e0e0; }
+      #map { width: 100%; height: 50vh; flex: none; }
+      #routes-sidebar { width: 100%; min-width: unset; box-shadow: none; border-top: 2px solid #e0e0e0; }
     }
   </style>
 </head>
@@ -74,7 +81,7 @@
 
     <div class="controls">
       <div class="form-group">
-        <label>Agent Profile</label>
+        <label>Profile Description</label>
         <select id="agentSelect">
           <option value="biospheric">🌱 Biospheric (Pro-environment)</option>
           <option value="altruistic">🤝 Altruistic (Safety-focused)</option>
@@ -101,25 +108,27 @@
         <div id="destSuggestions" class="suggestions"></div>
       </div>
 
-      <div class="form-group">
-        <label><input type="checkbox" id="poisEnabled" checked /> Enable POI-based nudging</label>
-      </div>
-
-      <button class="route-btn" onclick="findRoutes()" id="routeBtn" disabled>Calculate Routes</button>
+<button class="route-btn" onclick="findRoutes()" id="routeBtn" disabled>Calculate Routes</button>
       <button class="route-btn" onclick="clearAll()" id="clearBtn" style="background: #666; margin-top: 8px;" disabled>Clear Map</button>
     </div>
 
     <div id="agentInfo" class="agent-info" style="margin: 0 20px;"></div>
 
-    <div class="results" id="results">
-      <div style="text-align: center; color: #999; padding: 40px 20px;">
-        <p style="font-size: 14px; margin-bottom: 10px;">👆 Select origin and destination</p>
-        <p style="font-size: 12px;">Click on the map to set locations</p>
-      </div>
-    </div>
-  </div>
+  </div><!-- end #sidebar -->
 
   <div id="map"></div>
+
+  <div id="routes-sidebar">
+    <div class="routes-sidebar-header">🏆 Ranked Routes</div>
+    <div class="routes-sidebar-body">
+      <div id="results">
+        <div style="text-align: center; color: #999; padding: 40px 16px;">
+          <p style="font-size: 14px; margin-bottom: 8px;">👆 Set origin &amp; destination</p>
+          <p style="font-size: 12px;">Routes will appear here after calculation</p>
+        </div>
+      </div>
+    </div>
+  </div><!-- end #routes-sidebar -->
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -487,7 +496,6 @@
         const cardClass = `route-card ${isTop ? 'top-choice' : ''} ${route.available === false ? 'unavailable' : ''}`;
         let badges = '';
         if (route.available === false) badges += '<span class="unavailable-badge">🚫 UNAVAILABLE</span>';
-        if ((route.poi_boost || 0) !== 0) badges += `<span class="poi-badge">POI ${route.poi_boost > 0 ? '+' : ''}${route.poi_boost.toFixed(1)}</span>`;
 
         html += `
           <div class="${cardClass}" onclick="selectRoute(${index})">
@@ -540,7 +548,7 @@
             origin,
             destination,
             agent: document.getElementById('agentSelect').value,
-            pois: document.getElementById('poisEnabled').checked
+            pois: false
           })
         });
 
