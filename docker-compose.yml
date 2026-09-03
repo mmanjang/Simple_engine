@@ -6,6 +6,9 @@ services:
       dockerfile: Dockerfile.graphhopper
     container_name: simple-engine-graphhopper
     command: ["server", "/graphhopper/config/config.docker.yml"]
+    ports:
+      - "8989:8989"
+      - "8990:8990"
     volumes:
       - ./data:/data
       - ./graphhopper:/graphhopper/config
@@ -19,13 +22,17 @@ services:
     container_name: simple-engine-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-simple_engine}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-simple_engine_study}
+      MYSQL_USER: ${MYSQL_USER:-simple_engine}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
       - ./user_study/study_schema_mysql.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "3306:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD:-simple_engine}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,8 +44,12 @@ services:
     container_name: simple-engine-routing-api
     depends_on:
       - graphhopper
+    ports:
+      - "8000:8000"
     environment:
-      GRAPHOPPER_HOST: "http://graphhopper:8989"
+      GRAPHHOPPER_HOST: "http://graphhopper:8989"
+      POIS_FILE: "/app/example_pois.json"
+      POI_PROXIMITY_M: "100"
     command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
     restart: unless-stopped
 
@@ -49,9 +60,28 @@ services:
     container_name: simple-engine-interface-app
     depends_on:
       - graphhopper
+    ports:
+      - "5000:5000"
     environment:
-      GRAPHOPPER_HOST: "http://graphhopper:8989"
+      GRAPHHOPPER_HOST: "http://graphhopper:8989"
+      FLASK_ENV: "production"
     command: ["python", "app.py"]
+    restart: unless-stopped
+
+  wayfinder-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simple-engine-wayfinder
+    depends_on:
+      - graphhopper
+    ports:
+      - "5001:5001"
+    environment:
+      GRAPHHOPPER_HOST: "http://graphhopper:8989"
+      FLASK_ENV: "production"
+      WAYFINDER_PORT: "5001"
+    command: ["python", "wayfinder/wayfinder_app.py"]
     restart: unless-stopped
 
   study-app:
@@ -64,6 +94,8 @@ services:
         condition: service_started
       mysql:
         condition: service_healthy
+    ports:
+      - "6001:6000"
     env_file: .env
     environment:
       GRAPHHOPPER_HOST: "http://graphhopper:8989"

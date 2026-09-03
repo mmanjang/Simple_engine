@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Wayfinder</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --slate:    #1a1f2e;
+    --slate-2:  #252b3b;
+    --slate-3:  #2f3749;
+    --accent:   #7c0140;
+    --accent-l: #a0025a;
+    --white:    #ffffff;
+    --off:      #f7f8fa;
+    --border:   #e2e6ed;
+    --muted:    #8892a0;
+    --text:     #1c2333;
+
+    --bike:     #16a34a;
+    --car:      #6366f1;
+    --walk:     #d97706;
+    --pt:       #0284c7;
+    --bike-pt:  #0891b2;
+    --car-pt:   #7c3aed;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    background: var(--off);
+  }
+
+  /* ── LEFT PANEL ──────────────────────────────────────── */
+  #panel {
+    width: 380px;
+    min-width: 320px;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  #panel-header {
+    background: var(--slate);
+    padding: 20px 20px 16px;
+    flex-shrink: 0;
+  }
+
+  .app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .app-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .app-subtitle {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── SEARCH BOX ─────────────────────────────────────── */
+  #search-box {
+    padding: 16px;
+    background: var(--slate-2);
+    border-bottom: 1px solid var(--slate-3);
+    flex-shrink: 0;
+  }
+
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .search-row:last-child { margin-bottom: 0; }
+
+  .pin {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .pin-a { background: var(--accent); color: white; }
+  .pin-b { background: #16a34a; color: white; }
+
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 9px 32px 9px 12px;
+    background: var(--slate-3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input::placeholder { color: rgba(255,255,255,0.3); }
+  .search-input:focus { border-color: var(--accent); }
+
+  .search-clear {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer; font-size: 14px;
+    display: none;
+  }
+
+  .autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--slate-2);
+    border: 1px solid var(--slate-3);
+    border-radius: 8px;
+    z-index: 9999;
+    max-height: 180px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: none;
+  }
+
+  .autocomplete-item {
+    padding: 10px 12px;
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    line-height: 1.4;
+    transition: background 0.1s;
+  }
+
+  .autocomplete-item:hover { background: var(--slate-3); }
+  .autocomplete-item:last-child { border-bottom: none; }
+
+  .connector-line {
+    width: 28px; display: flex;
+    justify-content: center; align-items: center;
+    flex-shrink: 0;
+  }
+
+  .connector-line::before {
+    content: '';
+    width: 2px; height: 20px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 1px;
+  }
+
+  /* ── GO BUTTON ──────────────────────────────────────── */
+  #go-btn {
+    margin: 12px 0 8px;
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #go-btn:hover { background: var(--accent-l); }
+  #go-btn:active { transform: scale(0.98); }
+  #go-btn:disabled { background: #4a5568; cursor: not-allowed; }
+
+  /* ── ROUTES LIST ────────────────────────────────────── */
+  #routes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 0;
+  }
+
+  #routes-list::-webkit-scrollbar { width: 4px; }
+  #routes-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 13px; line-height: 1.6; }
+
+  .loading-state {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--muted);
+  }
+
+  .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 16px 8px;
+  }
+
+  /* ── ROUTE CARD ─────────────────────────────────────── */
+  .route-card {
+    margin: 0 12px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--white);
+  }
+
+  .route-card:hover {
+    border-color: #c0cad8;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  .route-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,1,64,0.1);
+  }
+
+  .route-card-top {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .mode-stripe {
+    width: 4px;
+    border-radius: 2px;
+    align-self: stretch;
+    min-height: 36px;
+    flex-shrink: 0;
+  }
+
+  .mode-icon { font-size: 20px; flex-shrink: 0; }
+
+  .route-card-info { flex: 1; min-width: 0; }
+
+  .route-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .route-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .route-duration {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .duration-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .duration-unit {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .route-stats {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+    padding: 8px 14px 8px 32px;
+  }
+
+  .stat-pill {
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 14px;
+    display: flex; align-items: center; gap: 3px;
+  }
+
+  /* ── TURN BY TURN DRAWER ────────────────────────────── */
+  .steps-drawer {
+    display: none;
+    border-top: 1px solid var(--border);
+    background: var(--off);
+    padding: 12px 14px 14px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .steps-drawer::-webkit-scrollbar { width: 3px; }
+  .steps-drawer::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .steps-drawer.open { display: block; }
+
+  .steps-drawer-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .step-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .step-item:last-child { margin-bottom: 0; }
+
+  .step-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-text { flex: 1; }
+  .step-dist { color: var(--muted); font-size: 10px; margin-top: 1px; }
+
+  /* ── MAP ─────────────────────────────────────────────── */
+  #map {
+    flex: 1;
+    height: 100vh;
+    z-index: 1;
+  }
+
+  /* ── RESPONSIVE ─────────────────────────────────────── */
+  @media (max-width: 900px) {
+    body { flex-direction: column; overflow-y: auto; height: auto; }
+    #panel { width: 100%; min-width: unset; max-height: 60vh; }
+    #map { height: 50vh; flex: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <div id="panel-header">
+    <div class="app-title">
+      <div class="dot"></div>
+      Campus Wayfinder
+    </div>
+    <div class="app-subtitle">Route Explorer · Magdeburg</div>
+  </div>
+
+  <div id="search-box">
+    <div class="search-row">
+      <div class="pin pin-a">A</div>
+      <div class="search-input-wrap" id="origin-wrap">
+        <input class="search-input" id="origin-input" placeholder="From — origin" autocomplete="off"/>
+        <button class="search-clear" id="origin-clear">✕</button>
+        <div class="autocomplete-dropdown" id="origin-dropdown"></div>
+      </div>
+    </div>
+    <div class="search-row" style="margin-bottom:0">
+      <div class="connector-line"></div>
+    </div>
+    <div class="search-row">
+      <div class="pin pin-b">B</div>
+      <div class="search-input-wrap" id="dest-wrap">
+        <input class="search-input" id="dest-input" placeholder="To — destination" autocomplete="off"/>
+        <button class="search-clear" id="dest-clear">✕</button>
+        <div class="autocomplete-dropdown" id="dest-dropdown"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;padding:0 16px;margin-bottom:4px;flex-shrink:0;">
+    <button id="go-btn" disabled style="flex:1;margin:0;width:auto;">
+      <span>🗺️</span> Find Routes
+    </button>
+    <button id="clear-btn" title="Clear all" style="
+      background:#f1f3f5;border:none;border-radius:8px;padding:12px 14px;
+      font-size:16px;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+      🗑️
+    </button>
+  </div>
+
+  <div id="routes-list">
+    <div class="empty-state">
+      <div class="empty-icon">🏫</div>
+      <p>Enter origin and destination<br>to explore available routes</p>
+    </div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+const GRAPHHOPPER_HOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8989'
+  : 'http://graphhopper:8989';
+
+const API_BASE = window.location.origin;
+
+const MODE_CONFIG = {
+  foot:    { label: 'Walking',         icon: '🚶', color: '#d97706', gh: 'foot' },
+  bike:    { label: 'Cycling',         icon: '🚴', color: '#16a34a', gh: 'bike' },
+  car:     { label: 'Driving',         icon: '🚗', color: '#6366f1', gh: 'car' },
+  pt:      { label: 'Public Transport',icon: '🚌', color: '#0284c7', gh: null },
+};
+
+// ── MAP SETUP ──────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [52.1396, 11.6276],
+  zoom: 14,
+  zoomControl: true,
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 19,
+}).addTo(map);
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let originCoords = null, destCoords = null;
+let originMarker = null, destMarker = null;
+let polylines    = {};
+let activeCard   = null;
+let mapClickMode = null; // 'origin' | 'dest' | null
+let routeData    = [];
+
+// ── MARKERS ────────────────────────────────────────────────────────────────
+function makeMarker(label, color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      width:32px;height:32px;border-radius:50% 50% 50% 0;
+      background:${color};transform:rotate(-45deg);
+      border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);
+      display:flex;align-items:center;justify-content:center;">
+      <span style="transform:rotate(45deg);color:white;font-weight:700;font-size:12px">${label}</span>
+    </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+  });
+}
+
+function setOriginMarker(lat, lon) {
+  if (originMarker) map.removeLayer(originMarker);
+  originMarker = L.marker([lat, lon], { icon: makeMarker('A', '#7c0140'), draggable: true }).addTo(map);
+  originMarker.on('dragend', e => {
+    const {lat, lng} = e.target.getLatLng();
+    originCoords = [lat, lng];
+    reverseGeocode(lat, lng, 'origin');
+    checkReady();
+  });
+}
+
+function setDestMarker(lat, lon) {
+  if (destMarker) map.removeLayer(destMarker);
+  destMarker = L.marker([lat, lon], { icon: makeMarker('B', '#16a34a'), draggable: true }).addTo(map);
+  destMarker.on('dragend', e => {
+    const {lat, lng} = e.target.getLatLng();
+    destCoords = [lat, lng];
+    reverseGeocode(lat, lng, 'dest');
+    checkReady();
+  });
+}
+
+// ── MAP CLICK ──────────────────────────────────────────────────────────────
+map.on('click', e => {
+  const {lat, lng} = e.latlng;
+  if (!originCoords) {
+    originCoords = [lat, lng];
+    setOriginMarker(lat, lng);
+    reverseGeocode(lat, lng, 'origin');
+  } else if (!destCoords) {
+    destCoords = [lat, lng];
+    setDestMarker(lat, lng);
+    reverseGeocode(lat, lng, 'dest');
+  }
+  checkReady();
+});
+
+// ── GEOCODING ──────────────────────────────────────────────────────────────
+async function geocode(query, dropdownId) {
+  if (query.length < 3) { document.getElementById(dropdownId).style.display = 'none'; return; }
+  try {
+    const url = `/api/geocode?q=${encodeURIComponent(query)}&limit=5`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    showDropdown(dropdownId, data.hits || []);
+  } catch {
+    // fallback to Nominatim
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' Magdeburg')}&format=json&limit=5`;
+      const res  = await fetch(url);
+      const hits = await res.json();
+      showDropdown(dropdownId, hits.map(h => ({
+        point: { lat: parseFloat(h.lat), lng: parseFloat(h.lon) },
+        name: h.display_name,
+      })));
+    } catch {}
+  }
+}
+
+async function reverseGeocode(lat, lon, field) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    const name = data.display_name ? data.display_name.split(',').slice(0,2).join(', ') : `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    document.getElementById(field === 'origin' ? 'origin-input' : 'dest-input').value = name;
+    document.getElementById(field === 'origin' ? 'origin-clear' : 'dest-clear').style.display = 'block';
+  } catch {}
+}
+
+function showDropdown(dropdownId, hits) {
+  const dd = document.getElementById(dropdownId);
+  if (!hits.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = hits.map((h, i) => {
+    const name = h.name || h.display_name || '';
+    const short = name.split(',').slice(0,2).join(', ');
+    return `<div class="autocomplete-item" data-idx="${i}" data-lat="${h.point?.lat || h.lat}" data-lon="${h.point?.lng || h.lon}">${short}</div>`;
+  }).join('');
+  dd.style.display = 'block';
+}
+
+// ── INPUT HANDLERS ─────────────────────────────────────────────────────────
+let geocodeTimer;
+function setupInput(inputId, dropdownId, field) {
+  const input = document.getElementById(inputId);
+  const dd    = document.getElementById(dropdownId);
+  const clear = document.getElementById(field === 'origin' ? 'origin-clear' : 'dest-clear');
+
+  input.addEventListener('input', () => {
+    clear.style.display = input.value ? 'block' : 'none';
+    clearTimeout(geocodeTimer);
+    geocodeTimer = setTimeout(() => geocode(input.value, dropdownId), 300);
+  });
+
+  clear.addEventListener('click', () => {
+    input.value = '';
+    clear.style.display = 'none';
+    dd.style.display = 'none';
+    if (field === 'origin') { originCoords = null; if (originMarker) map.removeLayer(originMarker); originMarker = null; }
+    else                    { destCoords   = null; if (destMarker)   map.removeLayer(destMarker);   destMarker   = null; }
+    checkReady();
+  });
+
+  dd.addEventListener('click', e => {
+    const item = e.target.closest('.autocomplete-item');
+    if (!item) return;
+    const lat = parseFloat(item.dataset.lat);
+    const lon = parseFloat(item.dataset.lon);
+    input.value = item.textContent;
+    clear.style.display = 'block';
+    dd.style.display = 'none';
+    if (field === 'origin') { originCoords = [lat, lon]; setOriginMarker(lat, lon); }
+    else                    { destCoords   = [lat, lon]; setDestMarker(lat, lon); }
+    checkReady();
+    map.setView([lat, lon], 14);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest(`#${field === 'origin' ? 'origin' : 'dest'}-wrap`)) dd.style.display = 'none';
+  });
+}
+
+setupInput('origin-input', 'origin-dropdown', 'origin');
+setupInput('dest-input',   'dest-dropdown',   'dest');
+
+function checkReady() {
+  document.getElementById('go-btn').disabled = !(originCoords && destCoords);
+}
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  // Clear markers
+  if (originMarker) { map.removeLayer(originMarker); originMarker = null; }
+  if (destMarker)   { map.removeLayer(destMarker);   destMarker   = null; }
+  clearPolylines();
+  originCoords = null;
+  destCoords   = null;
+  routeData    = [];
+  // Clear inputs
+  ['origin-input', 'dest-input'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['origin-clear', 'dest-clear'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  ['origin-dropdown', 'dest-dropdown'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  // Reset routes panel
+  document.getElementById('routes-list').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">🏫</div>
+      <p>Enter origin and destination<br>to explore available routes</p>
+    </div>`;
+  checkReady();
+});
+
+// ── FETCH ROUTES ───────────────────────────────────────────────────────────
+document.getElementById('go-btn').addEventListener('click', fetchRoutes);
+
+// ── DISTANCE-ADAPTIVE MODE SELECTION ─────────────────────────────────────
+function haversineMetre(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function getAdaptiveModes(distM) {
+    // Returns array of {mode, count, label} based on crow-flies distance
+    if (distM <= 400) {
+        // Very short — walking only, offer 3 path alternatives
+        return [
+            { mode: 'foot', count: 3, label: null },
+        ];
+    } else if (distM <= 800) {
+        // Short — 2 walk options + 1 bike (scooter-friendly)
+        return [
+            { mode: 'foot', count: 2, label: null },
+            { mode: 'bike', count: 1, label: null },
+        ];
+    } else if (distM <= 1500) {
+        // Medium short — 2 walk + 2 bike + PT
+        return [
+            { mode: 'foot', count: 2, label: null },
+            { mode: 'bike', count: 2, label: null },
+            { mode: 'pt',   count: 1, label: null },
+        ];
+    } else if (distM <= 4000) {
+        // Medium — 1 walk + 2 bike + PT + car
+        return [
+            { mode: 'foot', count: 1, label: null },
+            { mode: 'bike', count: 2, label: null },
+            { mode: 'pt',   count: 1, label: null },
+            { mode: 'car',  count: 1, label: null },
+        ];
+    } else {
+        // Long — bike + PT + car (walking impractical)
+        return [
+            { mode: 'bike', count: 1, label: null },
+            { mode: 'pt',   count: 1, label: null },
+            { mode: 'car',  count: 1, label: null },
+        ];
+    }
+}
+
+function distanceBadge(distM) {
+    if (distM <= 400)  return { label: 'Very short · < 400 m', color: '#16a34a' };
+    if (distM <= 800)  return { label: 'Short · < 800 m',      color: '#0891b2' };
+    if (distM <= 1500) return { label: 'Medium · < 1.5 km',    color: '#d97706' };
+    if (distM <= 4000) return { label: 'Campus range · < 4 km',color: '#7c3aed' };
+    return                    { label: 'Long distance',         color: '#6366f1' };
+}
+
+async function fetchRoutes() {
+  if (!originCoords || !destCoords) return;
+
+  showLoading();
+  clearPolylines();
+
+  const [oLat, oLon] = originCoords;
+  const [dLat, dLon] = destCoords;
+
+  // Fit map to bounds
+  const bounds = L.latLngBounds([originCoords, destCoords]);
+  map.fitBounds(bounds, { padding: [60, 60] });
+
+  // Single API call — backend handles distance calc + mode selection
+  const url = `/api/wayfinder?from_lat=${oLat}&from_lon=${oLon}&to_lat=${dLat}&to_lon=${dLon}`;
+  const res  = await fetch(url);
+  if (!res.ok) {
+    document.getElementById('routes-list').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Error fetching routes.<br>Please try again.</p></div>`;
+    return;
+  }
+  const data = await res.json();
+  routeData = data.routes || [];
+  routeData._badge = { label: data.badge, color: data.color };
+  routeData._distM = data.distance_m;
+
+  renderRoutes(routeData);
+}
+
+async function fetchGHRoute(oLat, oLon, dLat, dLon, mode, count = 1) {
+  try {
+    const url = `/api/route-simple?from_lat=${oLat}&from_lon=${oLon}&to_lat=${dLat}&to_lon=${dLon}&mode=${mode}&count=${count}`;
+    const res  = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Backend returns array when count > 1
+    return Array.isArray(data) ? data : [data];
+  } catch { return null; }
+}
+
+async function fetchPTRoute(oLat, oLon, dLat, dLon) {
+  try {
+    const url = `/api/route-pt?from_lat=${oLat}&from_lon=${oLon}&to_lat=${dLat}&to_lon=${dLon}`;
+    const res  = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+// ── RENDER ROUTES ──────────────────────────────────────────────────────────
+function renderRoutes(routes) {
+  const list = document.getElementById('routes-list');
+
+  if (!routes.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">😕</div><p>No routes found.<br>Try adjusting the locations.</p></div>`;
+    return;
+  }
+
+  const badge = routes._badge || { label: '', color: '#888' };
+  const distM = routes._distM || 0;
+  const distKm = distM >= 1000 ? (distM/1000).toFixed(1) + ' km' : Math.round(distM) + ' m';
+
+  list.innerHTML = `
+    <div id="dist-badge" style="
+      margin: 0 12px 10px;
+      padding: 8px 12px;
+      background: ${badge.color}18;
+      border-left: 3px solid ${badge.color};
+      border-radius: 0 6px 6px 0;
+      display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size:12px;font-weight:600;color:${badge.color}">${badge.label}</span>
+      <span style="font-size:11px;color:#8892a0">${distKm} as the crow flies</span>
+    </div>
+    <div class="section-label">${routes.length} route${routes.length !== 1 ? 's' : ''} available</div>`;
+
+  routes.forEach((route, idx) => {
+    const cfg   = MODE_CONFIG[route.mode] || { label: route.mode, icon: '🗺️', color: '#888' };
+    const mins  = Math.round(route.duration_s / 60);
+    const distK = (route.distance_m / 1000).toFixed(1);
+    const card  = document.createElement('div');
+    card.className = 'route-card';
+    card.dataset.idx = idx;
+
+    // Stats row
+    let statsHtml = `<span class="stat-pill">📏 ${distK} km</span>`;
+    if (route.transfers > 0)  statsHtml += `<span class="stat-pill">🔄 ${route.transfers} transfer${route.transfers > 1 ? 's' : ''}</span>`;
+    if (route.walking_m > 50) statsHtml += `<span class="stat-pill">🚶 ${Math.round(route.walking_m)} m walk</span>`;
+
+    card.innerHTML = `
+      <div class="route-card-top">
+        <div class="mode-stripe" style="background:${cfg.color}"></div>
+        <div class="mode-icon">${cfg.icon}</div>
+        <div class="route-card-info">
+          <div class="route-name">${cfg.label}${route.alt_index > 0 ? ' <span style="font-size:10px;font-weight:400;color:#8892a0;">Alt ' + (route.alt_index + 1) + '</span>' : ''}</div>
+          <div class="route-sub">${route.summary || ''}</div>
+        </div>
+        <div class="route-duration">
+          <div class="duration-val">${mins}</div>
+          <div class="duration-unit">min</div>
+        </div>
+      </div>
+      <div class="route-stats">${statsHtml}</div>
+      <div class="steps-drawer" id="steps-${idx}">
+        <div class="steps-drawer-label">Turn-by-turn directions</div>
+        ${renderSteps(route.steps || [])}
+      </div>`;
+
+    card.addEventListener('click', () => selectRoute(card, route, idx, cfg));
+    list.appendChild(card);
+
+    // Draw polyline
+    drawPolyline(route, idx, cfg.color);
+  });
+
+  // Auto-select first
+  const firstCard = list.querySelector('.route-card');
+  if (firstCard) firstCard.click();
+}
+
+function renderSteps(steps) {
+  if (!steps.length) return '<div class="step-item"><div class="step-text" style="color:#8892a0">No step details available</div></div>';
+  return steps.map((s, i) => {
+    const icon = getStepIcon(s.sign || s.type || '');
+    const dist = s.distance ? `<div class="step-dist">${s.distance < 1000 ? Math.round(s.distance) + ' m' : (s.distance/1000).toFixed(1) + ' km'}</div>` : '';
+    return `<div class="step-item">
+      <div class="step-icon">${icon}</div>
+      <div class="step-text">
+        ${s.text || s.instruction || s.name || 'Continue'}
+        ${dist}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getStepIcon(sign) {
+  const map = { '-3':'↰', '-2':'←', '-1':'↖', '0':'↑', '1':'↗', '2':'→', '3':'↱', '4':'◎', '5':'◎', '6':'◎',
+    'turn-left':'←', 'turn-right':'→', 'continue':'↑', 'arrive':'◎', 'depart':'◉' };
+  return map[String(sign)] || '•';
+}
+
+// ── SELECT ROUTE ───────────────────────────────────────────────────────────
+function selectRoute(card, route, idx, cfg) {
+  // Deactivate previous
+  document.querySelectorAll('.route-card').forEach(c => {
+    c.classList.remove('active');
+    c.querySelector('.steps-drawer')?.classList.remove('open');
+  });
+  Object.values(polylines).forEach(p => {
+    p.setStyle({ weight: 4, opacity: 0.5 });
+  });
+
+  // Activate this card
+  card.classList.add('active');
+  document.getElementById(`steps-${idx}`)?.classList.add('open');
+  activeCard = idx;
+
+  // Highlight polyline
+  if (polylines[idx]) {
+    polylines[idx].setStyle({ weight: 6, opacity: 1 });
+    polylines[idx].bringToFront();
+  }
+
+  // Scroll to card
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── POLYLINES ──────────────────────────────────────────────────────────────
+function drawPolyline(route, idx, color) {
+  const geom = route.geometry || route.points;
+  if (!geom) return;
+
+  let coords = [];
+  if (geom.type === 'LineString') {
+    coords = geom.coordinates.map(c => [c[1], c[0]]);
+  } else if (geom.type === 'encoded') {
+    coords = decodePolyline(geom.encoded);
+  } else if (Array.isArray(geom)) {
+    coords = geom;
+  }
+
+  if (!coords.length) return;
+
+  // Background outline for contrast
+  L.polyline(coords, { color: 'white', weight: 8, opacity: 0.6 }).addTo(map);
+  const line = L.polyline(coords, { color, weight: 4, opacity: 0.5, lineJoin: 'round', lineCap: 'round' }).addTo(map);
+  polylines[idx] = line;
+}
+
+function clearPolylines() {
+  Object.values(polylines).forEach(p => map.removeLayer(p));
+  // Also remove white outlines — just remove all non-tile, non-marker layers
+  map.eachLayer(l => { if (l instanceof L.Polyline) map.removeLayer(l); });
+  polylines = {};
+}
+
+function decodePolyline(encoded, precision = 5) {
+  const factor = Math.pow(10, precision);
+  const coords = []; let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : result >> 1;
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : result >> 1;
+    coords.push([lat / factor, lng / factor]);
+  }
+  return coords;
+}
+
+function showLoading() {
+  document.getElementById('routes-list').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p style="font-size:13px">Finding routes…</p>
+    </div>`;
+}
+</script>
+</body>
+</html>
