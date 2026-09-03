@@ -457,7 +457,10 @@
 <div id="map"></div>
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────────────────
+// ------------------
+//  CONFIG 
+// ------------------
+
 const GRAPHHOPPER_HOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8989'
   : 'http://graphhopper:8989';
@@ -471,7 +474,10 @@ const MODE_CONFIG = {
   pt:      { label: 'Public Transport',icon: '🚌', color: '#0284c7', gh: null },
 };
 
-// ── MAP SETUP ──────────────────────────────────────────────────────────────
+// ------------------
+// MAP SETUP 
+// ------------------
+
 const map = L.map('map', {
   center: [52.1396, 11.6276],
   zoom: 14,
@@ -483,7 +489,10 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
 }).addTo(map);
 
-// ── STATE ──────────────────────────────────────────────────────────────────
+// ------------------
+// STATE 
+// ------------------
+
 let originCoords = null, destCoords = null;
 let originMarker = null, destMarker = null;
 let polylines    = {};
@@ -491,7 +500,10 @@ let activeCard   = null;
 let mapClickMode = null; // 'origin' | 'dest' | null
 let routeData    = [];
 
-// ── MARKERS ────────────────────────────────────────────────────────────────
+// ------------------
+// MARKERS 
+// ------------------
+
 function makeMarker(label, color) {
   return L.divIcon({
     className: '',
@@ -529,7 +541,10 @@ function setDestMarker(lat, lon) {
   });
 }
 
-// ── MAP CLICK ──────────────────────────────────────────────────────────────
+// ------------------
+// MAP CLICK 
+// ------------------
+
 map.on('click', e => {
   const {lat, lng} = e.latlng;
   if (!originCoords) {
@@ -544,7 +559,10 @@ map.on('click', e => {
   checkReady();
 });
 
-// ── GEOCODING ──────────────────────────────────────────────────────────────
+// ------------------
+// GEOCODING 
+// ------------------
+
 async function geocode(query, dropdownId) {
   if (query.length < 3) { document.getElementById(dropdownId).style.display = 'none'; return; }
   try {
@@ -588,7 +606,10 @@ function showDropdown(dropdownId, hits) {
   dd.style.display = 'block';
 }
 
-// ── INPUT HANDLERS ─────────────────────────────────────────────────────────
+// ------------------
+// INPUT HANDLERS 
+// ------------------
+
 let geocodeTimer;
 function setupInput(inputId, dropdownId, field) {
   const input = document.getElementById(inputId);
@@ -663,7 +684,9 @@ document.getElementById('clear-btn').addEventListener('click', () => {
   checkReady();
 });
 
-// ── FETCH ROUTES ───────────────────────────────────────────────────────────
+// ------------------
+// FETCH ROUTES 
+// ------------------
 document.getElementById('go-btn').addEventListener('click', fetchRoutes);
 
 // ── DISTANCE-ADAPTIVE MODE SELECTION ─────────────────────────────────────
@@ -862,7 +885,9 @@ function getStepIcon(sign) {
   return map[String(sign)] || '•';
 }
 
-// ── SELECT ROUTE ───────────────────────────────────────────────────────────
+// ----------------
+// SELECT ROUTE 
+// ----------------
 function selectRoute(card, route, idx, cfg) {
   // Deactivate previous
   document.querySelectorAll('.route-card').forEach(c => {
