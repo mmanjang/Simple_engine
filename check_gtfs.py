@@ -23,7 +23,7 @@ import glob
 
 def find_gtfs_file() -> str:
     """Auto-detect the GTFS zip in the data/ folder."""
-    candidates = glob.glob("data/*.zip")
+    candidates = glob.glob("data/magdeburg_gtfs.zip")
     if not candidates:
         raise FileNotFoundError(
             "No .zip file found in data/. "

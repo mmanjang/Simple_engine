@@ -24,6 +24,7 @@ from flask_cors import CORS
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from graphhopper_client import GraphHopperClient
+from gtfs_departures import GTFSDepartures
 
 
 # -------------------------
@@ -31,12 +32,23 @@ from graphhopper_client import GraphHopperClient
 # -------------------------
 
 GRAPHHOPPER_HOST = os.getenv("GRAPHHOPPER_HOST", "http://localhost:8989")
+GTFS_ZIP_PATH    = os.getenv("GTFS_ZIP_PATH",
+                              os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                           "..", "data", "magdeburg_gtfs.zip"))
 BASE_DIR         = os.path.dirname(os.path.abspath(__file__))
 
-gh_client = GraphHopperClient(base_url=GRAPHHOPPER_HOST)
+gh_client    = GraphHopperClient(base_url=GRAPHHOPPER_HOST)
+gtfs_board   = GTFSDepartures(GTFS_ZIP_PATH)
 
 app = Flask(__name__)
 CORS(app)
+
+# Load GTFS on startup
+try:
+    gtfs_board.load()
+    print("✅ GTFS departure board loaded")
+except Exception as e:
+    print(f"⚠️  GTFS load failed: {e}")
 
 
 # -------------------------
@@ -336,6 +348,45 @@ def route_pt():
     if not results:
         return jsonify({"error": "No PT route found"}), 404
     return jsonify(results[0])
+
+
+# -------------------------
+#  DEPARTURE BOARD
+# -------------------------
+
+@app.route("/api/departures", methods=["GET"])
+def departures():
+    """
+    Next tram departures from the two university stops.
+
+    Params (optional):
+        limit   — max departures per stop (default 6)
+        window  — look-ahead in minutes (default 90)
+
+    Response:
+        {
+          "generated_at": "14:23:01",
+          "stops": {
+            "universitaet": {
+              "label": "Magdeburg, Universität",
+              "icon":  "🎓",
+              "departures": [
+                { "line": "6", "direction": "Herrenkrug",
+                  "time": "14:28", "minutes": 5 },
+                ...
+              ]
+            },
+            "bibliothek": { ... }
+          }
+        }
+    """
+    try:
+        limit  = int(request.args.get("limit",  6))
+        window = int(request.args.get("window", 90))
+        data   = gtfs_board.next_departures(limit=limit, window_minutes=window)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # -------------------------
