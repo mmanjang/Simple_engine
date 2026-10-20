@@ -1,0 +1,1039 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>VERA — Value-Aware Routing</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap">
+<!-- Leaflet CSS inlined to satisfy CSP -->
+<style>
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane > svg,.leaflet-pane > canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}.leaflet-container{overflow:hidden}.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-user-drag:none}.leaflet-tile::selection{background:transparent}.leaflet-safari .leaflet-tile{image-rendering:-webkit-optimize-contrast}.leaflet-safari .leaflet-tile-container{width:1600px;height:1600px;-webkit-transform-origin:0 0}.leaflet-marker-icon,.leaflet-marker-shadow{display:block}.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}.leaflet-container.leaflet-touch-zoom{-ms-touch-action:pan-x pan-y;touch-action:pan-x pan-y}.leaflet-container.leaflet-touch-drag{-ms-touch-action:pinch-zoom;touch-action:none;touch-action:pinch-zoom}.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{-ms-touch-action:none;touch-action:none}.leaflet-container{-webkit-tap-highlight-color:transparent}.leaflet-container a{-webkit-tap-highlight-color:rgba(51,181,229,.4)}.leaflet-tile{filter:inherit;visibility:hidden}.leaflet-tile-loaded{visibility:inherit}.leaflet-zoom-box{width:0;height:0;-moz-box-sizing:border-box;box-sizing:border-box;z-index:800}.leaflet-overlay-pane svg{-moz-user-select:none}.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-shadow-pane{z-index:500}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}.leaflet-vml-shape{width:1px;height:1px}.lvml{behavior:url(#default#VML);display:inline-block;position:absolute}.leaflet-control{position:relative;z-index:800;pointer-events:visiblePainted;pointer-events:auto}.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}.leaflet-control{float:left;clear:both}.leaflet-right .leaflet-control{float:right}.leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px}.leaflet-fade-anim .leaflet-popup{opacity:0;-webkit-transition:opacity .2s linear;-moz-transition:opacity .2s linear;transition:opacity .2s linear}.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}.leaflet-zoom-animated{-webkit-transform-origin:0 0;-ms-transform-origin:0 0;transform-origin:0 0}.leaflet-zoom-anim .leaflet-zoom-animated{will-change:transform}.leaflet-zoom-anim .leaflet-zoom-animated{-webkit-transition:-webkit-transform .25s cubic-bezier(0,0,.25,1);-moz-transition:-moz-transform .25s cubic-bezier(0,0,.25,1);transition:transform .25s cubic-bezier(0,0,.25,1)}.leaflet-pan-anim .leaflet-tile,.leaflet-zoom-anim .leaflet-tile{-webkit-transition:none;-moz-transition:none;transition:none}.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-zoom-hide{visibility:hidden}.leaflet-clickable{cursor:pointer}.leaflet-container{cursor:grab}.leaflet-crosshair,.leaflet-crosshair .leaflet-clickable{cursor:crosshair}.leaflet-popup-pane,.leaflet-control{cursor:auto}.leaflet-dragging .leaflet-grab,.leaflet-dragging .leaflet-grab .leaflet-clickable,.leaflet-dragging .leaflet-marker-draggable{cursor:move;cursor:-webkit-grabbing;cursor:-moz-grabbing;cursor:grabbing}.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane > svg path,.leaflet-tile-container{pointer-events:none}.leaflet-marker-icon.leaflet-interactive,.leaflet-image-layer.leaflet-interactive,.leaflet-pane > svg path.leaflet-interactive,svg.leaflet-image-layer.leaflet-interactive path{pointer-events:visiblePainted;pointer-events:auto}.leaflet-container{background:#ddd;outline-offset:1px}.leaflet-container a.leaflet-active{outline:2px solid orange}.leaflet-zoom-box{border:2px dotted #38f;background:rgba(255,255,255,.5)}.leaflet-container{font-family:Helvetica Neue,Arial,Helvetica,sans-serif;font-size:.75rem;font-size:1rem;line-height:1.5}.leaflet-bar{box-shadow:0 1px 5px rgba(0,0,0,.65);border-radius:4px}.leaflet-bar a{background-color:#fff;border-bottom:1px solid #ccc;width:26px;height:26px;line-height:26px;display:block;text-align:center;text-decoration:none;color:black}.leaflet-bar a,.leaflet-control-layers-toggle{background-position:50% 50%;background-repeat:no-repeat;display:block}.leaflet-bar a:hover,.leaflet-bar a:focus{background-color:#f4f4f4}.leaflet-bar a:first-child{border-top-left-radius:4px;border-top-right-radius:4px}.leaflet-bar a:last-child{border-bottom-left-radius:4px;border-bottom-right-radius:4px;border-bottom:none}.leaflet-bar a.leaflet-disabled{cursor:default;background-color:#f4f4f4;color:#bbb}.leaflet-touch .leaflet-bar a{width:30px;height:30px;line-height:30px}.leaflet-touch .leaflet-bar a:first-child{border-top-left-radius:2px;border-top-right-radius:2px}.leaflet-touch .leaflet-bar a:last-child{border-bottom-left-radius:2px;border-bottom-right-radius:2px}.leaflet-control-zoom-in,.leaflet-control-zoom-out{font:700 18px/26px Lucida Console,Monaco,monospace;text-indent:1px}.leaflet-touch .leaflet-control-zoom-in{font-size:22px}.leaflet-touch .leaflet-control-zoom-out{font-size:20px}.leaflet-control-attribution{padding:0 5px;color:#333;line-height:1.4}.leaflet-control-attribution a{text-decoration:none}.leaflet-control-attribution a:hover,.leaflet-control-attribution a:focus{text-decoration:underline}.leaflet-attribution-flag{display:inline!important;vertical-align:baseline!important;width:1em;height:.6669em}.leaflet-left .leaflet-control-scale{margin-left:5px}.leaflet-bottom .leaflet-control-scale{margin-bottom:5px}.leaflet-control-scale-line{border:2px solid #777;border-top:none;line-height:1.1;padding:2px 5px 1px;white-space:nowrap;-moz-box-sizing:border-box;box-sizing:border-box;background:rgba(255,255,255,.5)}.leaflet-control-scale-line:not(:first-child){border-top:2px solid #777;border-bottom:none}.leaflet-control-scale-line:not(:first-child):not(:last-child){border-bottom:2px solid #777}.leaflet-touch .leaflet-control-attribution,.leaflet-touch .leaflet-control-layers,.leaflet-touch .leaflet-bar{box-shadow:none}.leaflet-touch .leaflet-control-layers,.leaflet-touch .leaflet-bar{border:2px solid rgba(0,0,0,.2);background-clip:padding-box}.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:12px}.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-left:-20px;overflow:hidden;pointer-events:none}.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;-webkit-transform:rotate(45deg);-moz-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg)}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:white;color:#333;box-shadow:0 3px 14px rgba(0,0,0,.4)}.leaflet-container a.leaflet-popup-close-button{position:absolute;top:0;right:0;border:none;text-align:center;width:24px;height:24px;font:16px/24px Tahoma,Verdana,sans-serif;color:#757575;text-decoration:none;background:transparent}.leaflet-container a.leaflet-popup-close-button:hover,.leaflet-container a.leaflet-popup-close-button:focus{color:#585858}.leaflet-popup-scrolled{overflow:auto}.leaflet-oldie .leaflet-popup-content-wrapper{-ms-zoom:1}.leaflet-oldie .leaflet-popup-tip{width:24px;-ms-filter:"progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";filter:progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)}.leaflet-oldie .leaflet-popup-tip-container{margin-top:-1px}.leaflet-oldie .leaflet-control-zoom,.leaflet-oldie .leaflet-control-layers,.leaflet-oldie .leaflet-popup-content-wrapper,.leaflet-oldie .leaflet-popup-tip{border:1px solid #999}.leaflet-popup-content{margin:13px 24px 13px 20px;line-height:1.3;word-break:break-word}.leaflet-popup-content p{margin:17px 0}.leaflet-tooltip{position:absolute;padding:6px 12px;background-color:#fff;border:1px solid #fff;border-radius:3px;color:#222;white-space:nowrap;-webkit-user-select:none;-moz-user-select:none;user-select:none;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}.leaflet-tooltip.leaflet-interactive{cursor:pointer;pointer-events:auto}.leaflet-tooltip-top:before,.leaflet-tooltip-bottom:before,.leaflet-tooltip-left:before,.leaflet-tooltip-right:before{position:absolute;pointer-events:none;border:6px solid transparent;background:transparent;content:""}.leaflet-tooltip-bottom:before{top:0;left:50%;margin-left:-6px;margin-top:-12px;border-bottom-color:#fff}.leaflet-tooltip-top:before{bottom:0;left:50%;margin-left:-6px;margin-bottom:-12px;border-top-color:#fff}.leaflet-tooltip-left:before{top:50%;right:0;margin-top:-6px;margin-right:-12px;border-left-color:#fff}.leaflet-tooltip-right:before{top:50%;left:0;margin-top:-6px;margin-left:-12px;border-right-color:#fff}
+</style>
+<style>
+/* ── Tokens ───────────────────────────────────────────────────────── */
+:root {
+  --navy:   #1C2B4A;
+  --maroon: #6B1D3E;
+  --teal:   #0D8A7A;
+  --teal2:  #0BB89F;
+  --bg:     #F0F3F8;
+  --card:   #FFFFFF;
+  --fg:     #1A202C;
+  --fg2:    #4A5568;
+  --fg3:    #9AA3B2;
+  --border: #DDE3EE;
+  --green:  #22C55E;
+  --red:    #EF4444;
+  --shadow: 0 2px 16px rgba(28,43,74,.12);
+  --r: 18px; --r-sm: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0D1524; --card:#162035; --fg:#E2E8F5; --fg2:#8A98B0;
+    --fg3:#4A5568; --border:#2A3650;
+    --shadow:0 2px 16px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0D1524; --card:#162035; --fg:#E2E8F5; --fg2:#8A98B0;
+  --fg3:#4A5568; --border:#2A3650;
+  --shadow:0 2px 16px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding-block: 28px;
+}
+
+/* ── Phone frame ──────────────────────────────────────────────────── */
+.phone {
+  width: 390px;
+  height: 844px;          /* fixed height so flex children get real pixels */
+  background: var(--card);
+  border-radius: 44px;
+  box-shadow: 0 24px 80px rgba(28,43,74,.22), 0 0 0 10px #1a1a2e;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ── Status bar ───────────────────────────────────────────────────── */
+.status-bar {
+  background: var(--navy);
+  padding: 12px 28px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.status-time { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; color:#fff; }
+.status-icons { display:flex; gap:5px; align-items:center; }
+.status-icons svg { opacity:.9; }
+
+/* ── App header ───────────────────────────────────────────────────── */
+.app-header {
+  background: var(--navy);
+  padding: 0 24px 18px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.app-logo {
+  width: 36px; height: 36px;
+  background: var(--teal);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family:'Space Grotesk',sans-serif; font-weight:700; color:#fff; font-size:13px;
+  letter-spacing:-.5px; flex-shrink:0;
+}
+.app-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; color:#fff; flex:1; }
+.app-subtitle { font-size:10px; color:rgba(255,255,255,.55); letter-spacing:.5px; text-transform:uppercase; }
+.badge {
+  background: var(--maroon); color: #fff;
+  font-size: 9px; font-weight: 700; letter-spacing:.5px;
+  padding: 3px 8px; border-radius: 20px; text-transform: uppercase;
+}
+
+/* ── Screen container ─────────────────────────────────────────────── */
+.screens { flex: 1; overflow: hidden; position: relative; min-height: 0; height: 0; }
+.screen {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transform: translateX(40px);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.screen.active {
+  opacity: 1; pointer-events: auto; transform: translateX(0);
+}
+.screen.exit-left { opacity: 0; transform: translateX(-40px); }
+
+/* ── Bottom nav ───────────────────────────────────────────────────── */
+.bottom-nav {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex; padding: 10px 0 14px;
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; border: none; background: none; cursor: pointer;
+  color: var(--fg3); transition: color .2s;
+  font-family: 'Inter', sans-serif;
+}
+.nav-btn.active { color: var(--teal); }
+.nav-btn svg { width:22px; height:22px; }
+.nav-btn span { font-size: 10px; font-weight: 500; letter-spacing:.3px; }
+
+/* ── Screen: Needs ────────────────────────────────────────────────── */
+.screen-scroll {
+  flex: 1; overflow-y: auto; padding: 20px 20px 8px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+
+.screen-title {
+  font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700;
+  color: var(--fg); margin-bottom: 4px;
+}
+.screen-sub { font-size:13px; color: var(--fg2); margin-bottom: 20px; line-height:1.5; }
+
+/* Need sliders */
+.need-slider-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.need-slider-row:last-child { border-bottom: none; }
+.nsr-icon { font-size: 17px; flex-shrink: 0; width: 22px; text-align:center; }
+.nsr-info { flex: 1; min-width: 0; }
+.nsr-label { font-size: 13px; font-weight: 500; color: var(--fg); margin-bottom: 5px; }
+.nsr-track {
+  position: relative; height: 28px; display: flex; align-items: center;
+}
+.nsr-track input[type=range] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 5px; border-radius: 3px; outline: none; cursor: pointer;
+  background: linear-gradient(to right, var(--teal) 0%, var(--teal) var(--fill), var(--border) var(--fill), var(--border) 100%);
+}
+.nsr-track input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--teal);
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.nsr-track input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--teal);
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.nsr-val {
+  font-size: 12px; font-weight: 700; color: var(--teal);
+  min-width: 34px; text-align: right; flex-shrink: 0;
+}
+
+/* Profile summary card */
+.profile-card {
+  background: linear-gradient(135deg, var(--navy), #243b6e);
+  border-radius: var(--r-sm); padding: 16px; margin-bottom: 20px;
+  color: #fff;
+}
+.profile-card-title { font-size:11px; letter-spacing:.8px; text-transform:uppercase; opacity:.65; margin-bottom:8px; }
+.profile-card-desc { font-size:14px; line-height:1.6; }
+.profile-card-desc strong { color: #7EEBD9; }
+.top-needs-row { display:flex; gap:8px; margin-top:12px; }
+.top-need-chip {
+  flex:1; background:rgba(255,255,255,.1); border-radius:8px;
+  padding:6px 8px; text-align:center;
+}
+.tnc-icon { font-size:16px; display:block; margin-bottom:2px; }
+.tnc-label { font-size:9px; opacity:.7; display:block; line-height:1.2; }
+.tnc-val { font-size:12px; font-weight:700; display:block; color:#7EEBD9; }
+
+.cta-btn {
+  width:100%; padding:14px; border:none; border-radius:var(--r-sm);
+  background:var(--teal); color:#fff; font-family:'Space Grotesk',sans-serif;
+  font-size:15px; font-weight:700; cursor:pointer; letter-spacing:.3px;
+  transition:background .2s; margin-top:4px;
+}
+.cta-btn:hover { background: var(--teal2); }
+.cta-btn:disabled { background: var(--fg3); cursor:not-allowed; }
+
+/* ── Screen: Route ────────────────────────────────────────────────── */
+.location-row {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-sm); padding: 0; overflow: hidden; margin-bottom: 16px;
+}
+.loc-field {
+  display: flex; align-items: center; gap: 10px; padding: 13px 14px;
+  position: relative;
+}
+.loc-field + .loc-field { border-top: 1px solid var(--border); }
+.loc-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.loc-dot.origin { background: var(--teal); }
+.loc-dot.dest   { background: var(--maroon); }
+.loc-input {
+  flex:1; border:none; outline:none; font-size:14px;
+  background:transparent; color:var(--fg);
+  font-family:'Inter',sans-serif;
+}
+.loc-input::placeholder { color:var(--fg3); }
+.loc-clear {
+  background:none; border:none; cursor:pointer;
+  color:var(--fg3); font-size:16px; padding:2px; line-height:1;
+}
+
+/* Autocomplete */
+.loc-wrapper { position: relative; }
+.autocomplete-dropdown {
+  position:absolute; top:100%; left:0; right:0;
+  background:var(--card); border:1.5px solid var(--border);
+  border-top:none; border-radius:0 0 var(--r-sm) var(--r-sm);
+  max-height:200px; overflow-y:auto; z-index:9999; display:none;
+  box-shadow: var(--shadow);
+}
+.autocomplete-dropdown.show { display:block; }
+.ac-item { padding:11px 14px; cursor:pointer; font-size:13px; border-bottom:1px solid var(--border); }
+.ac-item:last-child { border-bottom:none; }
+.ac-item:hover { background:rgba(13,138,122,.06); }
+.ac-name { font-weight:600; color:var(--fg); }
+.ac-addr { font-size:11px; color:var(--fg3); margin-top:2px; }
+
+/* Mini-map */
+#miniMap {
+  height: 180px; width: 100%; border-radius: var(--r-sm); overflow:hidden;
+  border: 1.5px solid var(--border); margin-bottom: 16px;
+  display: block; position: relative;
+}
+.mini-map-hint {
+  font-size: 11px; color: var(--fg3); text-align:center;
+  margin-top: -10px; margin-bottom: 12px;
+}
+
+/* Route cards */
+.route-card {
+  background: var(--card); border:2px solid var(--border); border-radius:var(--r-sm);
+  padding: 14px; margin-bottom: 10px; cursor:pointer; transition:all .2s;
+}
+.route-card:hover { border-color:var(--teal); }
+.route-card.active { border-color:var(--teal); box-shadow:0 0 0 3px rgba(13,138,122,.12); }
+.route-card.unavailable { opacity:.5; cursor:default; }
+.rc-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.rc-rank { font-size:11px; font-weight:700; color:var(--fg3); min-width:20px; }
+.rc-best { background:var(--teal); color:#fff; font-size:9px; font-weight:700;
+           letter-spacing:.5px; padding:2px 7px; border-radius:20px; text-transform:uppercase; }
+.rc-unavail { background:var(--red); color:#fff; font-size:9px; font-weight:700;
+              letter-spacing:.5px; padding:2px 7px; border-radius:20px; text-transform:uppercase; }
+.rc-mode { font-size:15px; font-weight:600; flex:1; }
+.rc-score { font-size:22px; font-weight:800; color:var(--teal); font-family:'Space Grotesk',sans-serif; }
+.rc-score-label { font-size:9px; color:var(--fg3); font-weight:400; letter-spacing:.3px; margin-top:-2px; text-align:right; }
+.rc-stats { display:flex; gap:12px; font-size:12px; color:var(--fg2); margin-bottom:10px; }
+/* score bar */
+.rc-bar-track { height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+.rc-bar-fill  { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--teal),var(--teal2)); transition:width .5s; }
+/* dim bars */
+.rc-dims { margin-top:10px; border-top:1px solid var(--border); padding-top:10px; }
+.rc-dims-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--teal); margin-bottom:8px; }
+.dim-row { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+.dim-icon { font-size:12px; width:16px; text-align:center; flex-shrink:0; }
+.dim-label { font-size:11px; color:var(--fg2); width:104px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dim-bar-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.dim-bar-pos { height:100%; background:var(--teal); border-radius:2px; transition:width .4s; }
+.dim-bar-neg { height:100%; background:var(--red); border-radius:2px; transition:width .4s; }
+.dim-val { font-size:10px; font-weight:700; min-width:36px; text-align:right; }
+.dim-val.pos { color:var(--teal); }
+.dim-val.neg { color:var(--red); }
+
+/* loading */
+.loading-state { text-align:center; padding:40px 16px; color:var(--fg3); }
+.spinner { width:36px; height:36px; border:3px solid var(--border); border-top:3px solid var(--teal);
+           border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 14px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.error-state { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3);
+               border-radius:var(--r-sm); padding:14px; font-size:13px; color:var(--red); margin:12px; }
+
+/* ── Screen: Map ──────────────────────────────────────────────────── */
+.map-screen { flex:1; display:flex; flex-direction:column; position:relative; overflow:hidden; min-height:0; }
+#vera-map { position:absolute; top:0; left:0; right:0; bottom:0; width:100%; height:100%; min-height:320px; }
+.map-screen { height:100%; }
+.map-overlay {
+  position:absolute; bottom:0; left:0; right:0;
+  background:linear-gradient(transparent, var(--card) 30%);
+  padding: 48px 16px 16px;
+  pointer-events:none;
+}
+.map-route-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--card); border:1.5px solid var(--border);
+  border-radius:20px; padding:7px 14px; font-size:13px; font-weight:600;
+  box-shadow:var(--shadow); pointer-events:auto; cursor:pointer;
+  color: var(--fg);
+  transition: border-color .2s;
+}
+.map-route-chip.active { border-color:var(--teal); color:var(--teal); }
+.chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.map-chips { display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Responsive: on narrow screens, show full-width */
+@media (max-width: 430px) {
+  body { padding-block: 0; align-items: flex-start; }
+  .phone { width:100%; border-radius:0; box-shadow:none; min-height:100svh; }
+}
+</style>
+
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-time" id="statusTime">9:41</span>
+    <div class="status-icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+        <rect x="0" y="3" width="3" height="9" rx="1" fill="white"/>
+        <rect x="4.5" y="2" width="3" height="10" rx="1" fill="white"/>
+        <rect x="9" y="0" width="3" height="12" rx="1" fill="white"/>
+        <rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="rgba(255,255,255,.3)"/>
+      </svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+        <path d="M8 2.5C10.2 2.5 12.2 3.4 13.6 4.9L15 3.5C13.2 1.7 10.7.5 8 .5S2.8 1.7 1 3.5L2.4 4.9C3.8 3.4 5.8 2.5 8 2.5Z" fill="white"/>
+        <path d="M8 5.5C9.5 5.5 10.9 6.1 11.9 7.1L13.3 5.7C11.9 4.4 10 3.5 8 3.5S4.1 4.4 2.7 5.7L4.1 7.1C5.1 6.1 6.5 5.5 8 5.5Z" fill="white"/>
+        <circle cx="8" cy="9.5" r="2" fill="white"/>
+      </svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+        <rect x="0" y="1" width="22" height="10" rx="2" stroke="white" stroke-width="1.2" fill="none"/>
+        <rect x="23" y="4" width="2" height="4" rx="1" fill="rgba(255,255,255,.5)"/>
+        <rect x="1.5" y="2.5" width="16" height="7" rx="1.2" fill="white"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- App header -->
+  <div class="app-header">
+    <div class="app-logo">V</div>
+    <div>
+      <div class="app-title">VERA</div>
+      <div class="app-subtitle">Value-Aware Routing</div>
+    </div>
+    <div class="badge">IUI 2027</div>
+  </div>
+
+  <!-- Screens -->
+  <div class="screens" id="screens">
+
+    <!-- ── Screen 0: Needs ─────────────────────────────────────────── -->
+    <div class="screen active" id="screen-needs">
+      <div class="screen-scroll" id="needsScroll">
+
+        <!-- Live profile summary -->
+        <div class="profile-card" id="profileCard">
+          <div class="profile-card-title">Your value profile</div>
+          <div class="profile-card-desc" id="profileDesc">Adjust the sliders below to set your priorities.</div>
+          <div class="top-needs-row" id="topNeedsRow"></div>
+        </div>
+
+        <!-- 11 need sliders -->
+        <div class="screen-sub">Set how much each value matters to you (0 = not important, 1 = essential).</div>
+        <div id="slidersList"></div>
+
+      </div>
+      <div style="padding:12px 20px 20px;">
+        <button class="cta-btn" onclick="goToRoute()">→ Find Routes</button>
+      </div>
+    </div>
+
+    <!-- ── Screen 1: Route ─────────────────────────────────────────── -->
+    <div class="screen" id="screen-route">
+      <div class="screen-scroll">
+
+        <div class="screen-title" style="margin-bottom:4px;">Where to?</div>
+        <div class="screen-sub">Enter your origin and destination. Routes will be ranked by your values.</div>
+
+        <!-- Location inputs -->
+        <div class="location-row">
+          <div class="loc-wrapper">
+            <div class="loc-field">
+              <span class="loc-dot origin"></span>
+              <input class="loc-input" id="originInput" placeholder="Starting point" autocomplete="off"
+                     oninput="handleLocationInput(this,'origin')" onfocus="showDropdown('origin')"/>
+              <button class="loc-clear" onclick="clearLoc('origin')" title="Clear">×</button>
+            </div>
+            <div class="autocomplete-dropdown" id="originDrop"></div>
+          </div>
+          <div class="loc-wrapper">
+            <div class="loc-field">
+              <span class="loc-dot dest"></span>
+              <input class="loc-input" id="destInput" placeholder="Destination" autocomplete="off"
+                     oninput="handleLocationInput(this,'dest')" onfocus="showDropdown('dest')"/>
+              <button class="loc-clear" onclick="clearLoc('dest')" title="Clear">×</button>
+            </div>
+            <div class="autocomplete-dropdown" id="destDrop"></div>
+          </div>
+        </div>
+
+        <!-- Mini-map: click to set origin then destination -->
+        <div id="miniMap"></div>
+        <p class="mini-map-hint">📍 Tap map to set origin, then destination</p>
+
+        <!-- Mode availability (beliefs) -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:600;color:var(--fg3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Mode availability</div>
+          <div id="beliefToggles" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button class="cta-btn" onclick="calculateRoutes()" id="calcBtn" disabled style="flex:1">Calculate Routes</button>
+          <button class="cta-btn" onclick="clearAll()" id="clearBtn" title="Clear and start over"
+            style="flex:0 0 auto;width:48px;background:var(--card);color:var(--fg2);border:1.5px solid var(--border);">✕</button>
+        </div>
+
+        <!-- Results -->
+        <div id="routeResults" style="margin-top:18px;"></div>
+
+      </div>
+    </div>
+
+    <!-- ── Screen 2: Map ───────────────────────────────────────────── -->
+    <div class="screen" id="screen-map">
+      <div class="map-screen">
+        <div id="vera-map"></div>
+        <div class="map-overlay">
+          <div class="map-chips" id="mapChips"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-needs" onclick="goTo(0)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 2a7 7 0 100 14A7 7 0 0012 2z"/><path d="M12 9v6M9 12h6"/>
+      </svg>
+      <span>Needs</span>
+    </button>
+    <button class="nav-btn" id="nav-route" onclick="goTo(1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/>
+        <path d="M5 8v8a2 2 0 002 2h6M19 16V8a2 2 0 00-2-2h-6"/>
+      </svg>
+      <span>Routes</span>
+    </button>
+    <button class="nav-btn" id="nav-map" onclick="goTo(2)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/>
+        <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+      </svg>
+      <span>Map</span>
+    </button>
+  </div>
+
+</div><!-- /phone -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ─── Dimension config ──────────────────────────────────────────────── */
+const DIM = {
+  pro_env:          { label:'Pro-environment',   icon:'🌱', color:'#0D8A7A' },
+  physical:         { label:'Physical activity',  icon:'🏃', color:'#E76F51' },
+  privacy:          { label:'Privacy',            icon:'🔒', color:'#457B9D' },
+  autonomy:         { label:'Autonomy',           icon:'🧭', color:'#6A4C93' },
+  cost:             { label:'Cost saving',        icon:'💰', color:'#F4A261' },
+  speed:            { label:'Speed',              icon:'⚡', color:'#E9C46A' },
+  safety_accident:  { label:'Safety (accident)',  icon:'🛡️', color:'#264653' },
+  safety_crime:     { label:'Safety (crime)',     icon:'🔦', color:'#4A4E69' },
+  comfort:          { label:'Comfort',            icon:'🛋️', color:'#A8DADC' },
+  reliable:         { label:'Reliability',        icon:'🕐', color:'#8338EC' },
+  health_infection: { label:'Health / infection', icon:'😷', color:'#06D6A0' },
+};
+const DIMS = Object.keys(DIM);
+
+/* ─── State ─────────────────────────────────────────────────────────── */
+let needs = {};
+DIMS.forEach(d => needs[d] = 0.5);
+
+let beliefs = { owns_bike: true, owns_car: true, has_pt_access: true };
+let originCoord = null, destCoord = null;
+let currentRoutes = [], selectedRouteIdx = 0;
+let searchTimers = {}, map = null, miniMap = null, routeLayers = [], markerOrigin = null, markerDest = null;
+let miniMarkerOrigin = null, miniMarkerDest = null;
+
+/* ─── Clock ─────────────────────────────────────────────────────────── */
+function updateClock() {
+  const now = new Date();
+  document.getElementById('statusTime').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 30000);
+
+/* ─── Build sliders ─────────────────────────────────────────────────── */
+function buildSliders() {
+  const el = document.getElementById('slidersList');
+  el.innerHTML = DIMS.map(d => {
+    const cfg = DIM[d]; const v = needs[d];
+    const pct = Math.round(v * 100);
+    return `<div class="need-slider-row">
+      <span class="nsr-icon">${cfg.icon}</span>
+      <div class="nsr-info">
+        <div class="nsr-label">${cfg.label}</div>
+        <div class="nsr-track">
+          <input type="range" min="0" max="1" step="0.01" value="${v}"
+            id="sl_${d}"
+            style="--fill:${pct}%"
+            oninput="onSlider('${d}',this)"/>
+        </div>
+      </div>
+      <div class="nsr-val" id="sv_${d}">${v.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+}
+
+function onSlider(dim, input) {
+  const v = parseFloat(input.value);
+  needs[dim] = v;
+  const pct = Math.round(v * 100);
+  input.style.setProperty('--fill', pct + '%');
+  document.getElementById('sv_' + dim).textContent = v.toFixed(2);
+  updateProfileCard();
+}
+
+/* ─── Profile card ──────────────────────────────────────────────────── */
+function updateProfileCard() {
+  const sorted = Object.entries(needs).sort((a,b) => b[1]-a[1]);
+  const top3 = sorted.slice(0,3);
+  const top3labels = top3.map(([k]) => DIM[k].label);
+  const bot2 = sorted.slice(-2).map(([k]) => DIM[k].label);
+
+  const desc = `Prioritises <strong>${top3labels.join(', ')}</strong>. Less concerned with ${bot2.join(' and ')}.`;
+  document.getElementById('profileDesc').innerHTML = desc;
+
+  const row = document.getElementById('topNeedsRow');
+  row.innerHTML = top3.map(([k,v]) => `
+    <div class="top-need-chip">
+      <span class="tnc-icon">${DIM[k].icon}</span>
+      <span class="tnc-label">${DIM[k].label}</span>
+      <span class="tnc-val">${v.toFixed(2)}</span>
+    </div>`).join('');
+}
+
+/* ─── Belief toggles ────────────────────────────────────────────────── */
+const BELIEF_LABELS = {
+  owns_bike:     { label:'Bike', icon:'🚲' },
+  owns_car:      { label:'Car',  icon:'🚗' },
+  has_pt_access: { label:'Transit', icon:'🚌' },
+};
+
+function buildBeliefToggles() {
+  const el = document.getElementById('beliefToggles');
+  el.innerHTML = Object.entries(BELIEF_LABELS).map(([k, cfg]) => `
+    <button id="bt_${k}" onclick="toggleBelief('${k}')"
+      style="display:flex;align-items:center;gap:6px;padding:7px 14px;
+             border-radius:20px;border:1.5px solid;cursor:pointer;
+             font-size:12px;font-weight:600;font-family:'Inter',sans-serif;
+             background:${beliefs[k] ? 'var(--teal)':'var(--card)'};
+             color:${beliefs[k] ? '#fff':'var(--fg3)'};
+             border-color:${beliefs[k] ? 'var(--teal)':'var(--border)'};">
+      ${cfg.icon} ${cfg.label}
+    </button>`).join('');
+}
+
+function toggleBelief(key) {
+  beliefs[key] = !beliefs[key];
+  buildBeliefToggles();
+}
+
+/* ─── Mini-map (Route screen) ───────────────────────────────────────── */
+function initMiniMap() {
+  if (miniMap) return;
+  miniMap = L.map('miniMap', { zoomControl: false }).setView([52.1308, 11.6273], 12);
+  addTileLayer(miniMap);
+  L.control.zoom({ position:'topright' }).addTo(miniMap);
+
+  miniMap.on('click', async (e) => {
+    const lat = e.latlng.lat, lon = e.latlng.lng;
+    // Reverse geocode to get a label
+    let label = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18`, { headers:{'Accept-Language':'en'} });
+      const d = await r.json();
+      if (d.display_name) label = d.display_name.split(',')[0];
+    } catch(e) {}
+
+    if (!originCoord) {
+      originCoord = { lat, lon };
+      document.getElementById('originInput').value = label;
+      if (miniMarkerOrigin) miniMap.removeLayer(miniMarkerOrigin);
+      miniMarkerOrigin = L.marker([lat,lon], { icon: markerIcon('A','#0D8A7A') }).addTo(miniMap);
+    } else if (!destCoord) {
+      destCoord = { lat, lon };
+      document.getElementById('destInput').value = label;
+      if (miniMarkerDest) miniMap.removeLayer(miniMarkerDest);
+      miniMarkerDest = L.marker([lat,lon], { icon: markerIcon('B','#6B1D3E') }).addTo(miniMap);
+      // Fit both markers
+      miniMap.fitBounds(L.latLngBounds(
+        [originCoord.lat, originCoord.lon],
+        [destCoord.lat, destCoord.lon]
+      ), { padding:[30,30] });
+    }
+    checkCalcBtn();
+  });
+}
+
+/* ─── Geocode / autocomplete (Nominatim) ────────────────────────────── */
+const NOMINATIM = 'https://nominatim.openstreetmap.org';
+
+async function geocodeSuggest(q) {
+  const url = `${NOMINATIM}/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=de&viewbox=11.4,52.0,11.9,52.3&bounded=1`;
+  const r = await fetch(url, { headers: { 'Accept-Language': 'en' }});
+  return r.json();
+}
+
+function handleLocationInput(input, side) {
+  clearTimeout(searchTimers[side]);
+  const q = input.value.trim();
+  if (q.length < 2) { closeDrop(side); return; }
+  searchTimers[side] = setTimeout(async () => {
+    try {
+      const results = await geocodeSuggest(q);
+      showDropResults(side, results);
+    } catch(e) {}
+  }, 350);
+}
+
+function showDropResults(side, results) {
+  const drop = document.getElementById(side + 'Drop');
+  if (!results.length) { drop.classList.remove('show'); return; }
+  drop.innerHTML = results.map((r,i) => {
+    const name = r.name || r.display_name.split(',')[0];
+    const addr = r.display_name;
+    return `<div class="ac-item" onclick="selectSuggestion('${side}','${r.lat}','${r.lon}',\`${name.replace(/`/g,"'")}\`)">
+      <div class="ac-name">${name}</div>
+      <div class="ac-addr">${addr}</div>
+    </div>`;
+  }).join('');
+  drop.classList.add('show');
+}
+
+function showDropdown(side) {
+  const drop = document.getElementById(side + 'Drop');
+  if (drop.innerHTML) drop.classList.add('show');
+}
+
+function closeDrop(side) {
+  document.getElementById(side + 'Drop').classList.remove('show');
+}
+
+function selectSuggestion(side, lat, lon, name) {
+  const coord = { lat: parseFloat(lat), lon: parseFloat(lon) };
+  if (side === 'origin') {
+    originCoord = coord;
+    document.getElementById('originInput').value = name;
+    addMapMarker('origin', coord);
+    // Also update mini-map
+    if (miniMap) {
+      if (miniMarkerOrigin) miniMap.removeLayer(miniMarkerOrigin);
+      miniMarkerOrigin = L.marker([coord.lat, coord.lon], { icon: markerIcon('A','#0D8A7A') }).addTo(miniMap);
+      miniMap.setView([coord.lat, coord.lon], 14);
+    }
+  } else {
+    destCoord = coord;
+    document.getElementById('destInput').value = name;
+    addMapMarker('dest', coord);
+    // Also update mini-map
+    if (miniMap) {
+      if (miniMarkerDest) miniMap.removeLayer(miniMarkerDest);
+      miniMarkerDest = L.marker([coord.lat, coord.lon], { icon: markerIcon('B','#6B1D3E') }).addTo(miniMap);
+      if (originCoord) {
+        miniMap.fitBounds(L.latLngBounds(
+          [originCoord.lat, originCoord.lon],
+          [coord.lat, coord.lon]
+        ), { padding:[30,30] });
+      }
+    }
+  }
+  closeDrop(side);
+  checkCalcBtn();
+}
+
+function clearLoc(side) {
+  if (side === 'origin') {
+    originCoord = null;
+    document.getElementById('originInput').value = '';
+    if (markerOrigin && map) { map.removeLayer(markerOrigin); markerOrigin = null; }
+    if (miniMarkerOrigin && miniMap) { miniMap.removeLayer(miniMarkerOrigin); miniMarkerOrigin = null; }
+  } else {
+    destCoord = null;
+    document.getElementById('destInput').value = '';
+    if (markerDest && map) { map.removeLayer(markerDest); markerDest = null; }
+    if (miniMarkerDest && miniMap) { miniMap.removeLayer(miniMarkerDest); miniMarkerDest = null; }
+  }
+  closeDrop(side);
+  checkCalcBtn();
+}
+
+function checkCalcBtn() {
+  document.getElementById('calcBtn').disabled = !(originCoord && destCoord);
+}
+
+function clearAll() {
+  // Clear inputs and coords
+  clearLoc('origin');
+  clearLoc('dest');
+  // Clear results
+  currentRoutes = [];
+  document.getElementById('routeResults').innerHTML = '';
+  document.getElementById('mapChips').innerHTML = '';
+  // Clear map layers
+  clearRouteLayers();
+  if (map) map.setView([52.1308, 11.6273], 13);
+  if (miniMap) miniMap.setView([52.1308, 11.6273], 12);
+}
+
+/* ─── Tile providers (tried in order until one loads) ────────────────── */
+const TILE_PROVIDERS = [
+  { url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    opts:{ subdomains:'abcd', attribution:'© OpenStreetMap © CARTO', maxZoom:20 } },
+  { url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    opts:{ subdomains:'abc', attribution:'© OpenStreetMap contributors', maxZoom:19 } },
+];
+
+function addTileLayer(leafletMap) {
+  let switched = false;
+  let errorCount = 0;
+  function tryProvider(idx) {
+    switched = false;
+    errorCount = 0;
+    const p = TILE_PROVIDERS[idx];
+    const layer = L.tileLayer(p.url, p.opts).addTo(leafletMap);
+    layer.on('tileerror', () => {
+      errorCount++;
+      // Switch after 2 errors to avoid thrashing on a single bad tile
+      if (!switched && errorCount >= 2 && idx < TILE_PROVIDERS.length - 1) {
+        switched = true;
+        leafletMap.removeLayer(layer);
+        tryProvider(idx + 1);
+      }
+    });
+    return layer;
+  }
+  tryProvider(0);
+}
+
+/* ─── Map markers ───────────────────────────────────────────────────── */
+function ensureMap() { /* map init now handled in goTo() after transitionend */ }
+function ensureMiniMap() { /* minimap init now handled in goTo() after transitionend */ }
+
+function markerIcon(label, bg) {
+  return L.divIcon({
+    html:`<div style="background:${bg};color:#fff;width:30px;height:30px;border-radius:50%;
+                      display:flex;align-items:center;justify-content:center;font-weight:700;
+                      font-size:12px;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);">${label}</div>`,
+    className:'', iconSize:[30,30], iconAnchor:[15,15]
+  });
+}
+
+function addMapMarker(side, coord) {
+  ensureMap();
+  if (side === 'origin') {
+    if (markerOrigin) map.removeLayer(markerOrigin);
+    markerOrigin = L.marker([coord.lat, coord.lon], { icon: markerIcon('A','#0D8A7A') }).addTo(map);
+  } else {
+    if (markerDest) map.removeLayer(markerDest);
+    markerDest = L.marker([coord.lat, coord.lon], { icon: markerIcon('B','#6B1D3E') }).addTo(map);
+  }
+  if (markerOrigin && markerDest) {
+    const bounds = L.latLngBounds(
+      [originCoord.lat, originCoord.lon],
+      [destCoord.lat, destCoord.lon]
+    );
+    map.fitBounds(bounds, { padding:[40,40] });
+  }
+}
+
+/* ─── Calculate routes ──────────────────────────────────────────────── */
+async function calculateRoutes() {
+  const resultsEl = document.getElementById('routeResults');
+  resultsEl.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Calculating value-based routes…</p></div>`;
+  clearRouteLayers();
+
+  try {
+    const res = await fetch('/api/route', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        origin:      [originCoord.lat, originCoord.lon],
+        destination: [destCoord.lat, destCoord.lon],
+        needs,
+        beliefs,
+        pois: false,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to calculate routes');
+    currentRoutes = data;
+    renderRouteCards(data);
+    buildMapChips();
+    // Draw top available route on map
+    const top = data.find(r => r.available !== false);
+    if (top) drawRoute(top, true);
+  } catch(err) {
+    resultsEl.innerHTML = `<div class="error-state"><strong>Error:</strong> ${err.message}<br><small>Make sure the VERA backend is running on <code>localhost:5050</code>.</small></div>`;
+  }
+}
+
+/* ─── Route cards ───────────────────────────────────────────────────── */
+function renderRouteCards(routes) {
+  const el = document.getElementById('routeResults');
+  if (!routes.length) { el.innerHTML = '<p style="color:var(--fg3);text-align:center;padding:20px;">No routes found.</p>'; return; }
+
+  el.innerHTML = routes.map((r, i) => {
+    const isTop = i === 0 && r.available !== false;
+    const unavail = r.available === false;
+    return `<div class="route-card${i===selectedRouteIdx?' active':''}${unavail?' unavailable':''}"
+                 onclick="${unavail ? '' : `selectRoute(${i})`}">
+      <div class="rc-header">
+        <span class="rc-rank">#${i+1}</span>
+        ${isTop ? '<span class="rc-best">Best Match</span>' : ''}
+        ${unavail ? '<span class="rc-unavail">Unavailable</span>' : ''}
+        <span class="rc-mode" style="flex:1">${r.mode_label || r.mode}</span>
+        <div title="Raw utility: ${(r.raw_score??r.score??0).toFixed(3)}">
+          <div class="rc-score" style="color:${scoreColor(r.score??0)}">${(r.score??0).toFixed(0)}</div>
+          <div class="rc-score-label">/ 100</div>
+        </div>
+      </div>
+      <div class="rc-stats">
+        <span>⏱ ${r.time_min??'?'} min</span>
+        <span>📏 ${(r.distance_km??0).toFixed(1)} km</span>
+        ${unavail ? '<span style="color:var(--red)">🚫 Not available</span>' : ''}
+      </div>
+      <div class="rc-bar-track">
+        <div class="rc-bar-fill" style="width:${r.score??0}%;background:${scoreColor(r.score??0)}"></div>
+      </div>
+      ${buildDimBars(r)}
+    </div>`;
+  }).join('');
+}
+
+function buildDimBars(route) {
+  const dims = route.dimension_scores;
+  if (!dims || !dims.length) return '';
+  const sorted = [...dims].sort((a,b) => b.contribution - a.contribution);
+  const top = sorted.filter(d => d.contribution > 0).slice(0,3);
+  const bot = sorted.filter(d => d.contribution < 0).slice(-2).reverse();
+  if (!top.length && !bot.length) return '';
+
+  let html = `<div class="rc-dims"><div class="rc-dims-title">Value alignment</div>`;
+  top.forEach(d => {
+    const cfg = DIM[d.dimension] || { label:d.dimension, icon:'●', color:'#0D8A7A' };
+    const pct = Math.min(100, Math.round(Math.abs(d.contribution) * 350));
+    html += `<div class="dim-row">
+      <span class="dim-icon">${cfg.icon}</span>
+      <span class="dim-label">${cfg.label}</span>
+      <div class="dim-bar-track"><div class="dim-bar-pos" style="width:${pct}%;background:${cfg.color};"></div></div>
+      <span class="dim-val pos">+${d.contribution.toFixed(2)}</span>
+    </div>`;
+  });
+  if (bot.length) {
+    html += `<div style="font-size:9px;color:var(--fg3);margin:5px 0 3px;text-transform:uppercase;letter-spacing:.5px;">Conflicts</div>`;
+    bot.forEach(d => {
+      const cfg = DIM[d.dimension] || { label:d.dimension, icon:'●', color:'#EF4444' };
+      const pct = Math.min(100, Math.round(Math.abs(d.contribution) * 350));
+      html += `<div class="dim-row">
+        <span class="dim-icon">${cfg.icon}</span>
+        <span class="dim-label">${cfg.label}</span>
+        <div class="dim-bar-track"><div class="dim-bar-neg" style="width:${pct}%;"></div></div>
+        <span class="dim-val neg">${d.contribution.toFixed(2)}</span>
+      </div>`;
+    });
+  }
+  return html + '</div>';
+}
+
+function selectRoute(i) {
+  selectedRouteIdx = i;
+  renderRouteCards(currentRoutes);
+  if (currentRoutes[i]) {
+    drawRoute(currentRoutes[i], true);
+    goTo(2);
+  }
+}
+
+/* ─── Map drawing ───────────────────────────────────────────────────── */
+const ROUTE_COLORS = {
+  bike:'#0D8A7A', foot:'#E76F51', walk:'#E76F51',
+  car:'#1C2B4A', pt:'#6B1D3E', bike_pt:'#0D8A7A',
+  car_pt:'#1C2B4A', default:'#888'
+};
+
+function getRouteColor(r) {
+  const m = (r.mode||'').toLowerCase();
+  for (const k of Object.keys(ROUTE_COLORS)) {
+    if (m.includes(k)) return ROUTE_COLORS[k];
+  }
+  return ROUTE_COLORS.default;
+}
+
+function scoreColor(s) {
+  // s is 0–100; green ≥ 70, amber 40–69, red < 40
+  if (s >= 70) return 'var(--teal)';
+  if (s >= 40) return '#E8A020';
+  return 'var(--red)';
+}
+
+function clearRouteLayers() {
+  if (!map) return;
+  routeLayers.forEach(l => map.removeLayer(l));
+  routeLayers = [];
+}
+
+function drawRoute(route, fitBounds) {
+  ensureMap();
+  clearRouteLayers();
+  if (!route.geometry) return;
+
+  // Handle GeoJSON LineString {type, coordinates} OR raw array [[lon,lat],...]
+  let rawCoords;
+  if (route.geometry && route.geometry.type === 'LineString' && Array.isArray(route.geometry.coordinates)) {
+    rawCoords = route.geometry.coordinates;   // GeoJSON from backend
+  } else if (Array.isArray(route.geometry)) {
+    rawCoords = route.geometry;               // fallback: raw array
+  } else {
+    console.warn('drawRoute: unrecognised geometry shape', route.geometry);
+    return;
+  }
+
+  const coords = rawCoords.map(p => [p[1], p[0]]);  // [lon,lat] → [lat,lon] for Leaflet
+  const color = getRouteColor(route);
+  const line = L.polyline(coords, { color, weight:5, opacity:.85 }).addTo(map);
+  routeLayers.push(line);
+
+  // re-add markers on top
+  if (markerOrigin) markerOrigin.addTo(map);
+  if (markerDest)   markerDest.addTo(map);
+
+  if (fitBounds && coords.length) {
+    map.fitBounds(line.getBounds(), { padding:[50,50] });
+  }
+}
+
+/* ─── Map chips ─────────────────────────────────────────────────────── */
+function buildMapChips() {
+  const el = document.getElementById('mapChips');
+  const avail = currentRoutes.filter(r => r.available !== false);
+  el.innerHTML = avail.map((r,i) => `
+    <div class="map-route-chip${i===0?' active':''}" onclick="mapSelectRoute(${currentRoutes.indexOf(r)},this)">
+      <span class="chip-dot" style="background:${getRouteColor(r)}"></span>
+      ${r.mode_label || r.mode} · ${r.time_min??'?'} min
+    </div>`).join('');
+}
+
+function mapSelectRoute(idx, chipEl) {
+  document.querySelectorAll('.map-route-chip').forEach(c => c.classList.remove('active'));
+  chipEl.classList.add('active');
+  selectedRouteIdx = idx;
+  drawRoute(currentRoutes[idx], true);
+}
+
+/* ─── Navigation ────────────────────────────────────────────────────── */
+const SCREEN_IDS = ['screen-needs', 'screen-route', 'screen-map'];
+const NAV_IDS    = ['nav-needs', 'nav-route', 'nav-map'];
+let currentScreen = 0;
+
+function goTo(n) {
+  if (n === currentScreen) return;
+  const prev = document.getElementById(SCREEN_IDS[currentScreen]);
+  const next = document.getElementById(SCREEN_IDS[n]);
+  prev.classList.remove('active');
+  prev.classList.add('exit-left');
+  setTimeout(() => prev.classList.remove('exit-left'), 350);
+
+  next.classList.add('active');
+  currentScreen = n;
+
+  NAV_IDS.forEach((id,i) => {
+    document.getElementById(id).classList.toggle('active', i === n);
+  });
+
+  if (n === 1) {
+    const s = document.getElementById('screen-route');
+    const onEnd1 = () => {
+      if (!miniMap) initMiniMap();
+      else miniMap.invalidateSize();
+    };
+    s.addEventListener('transitionend', onEnd1, { once: true });
+    setTimeout(onEnd1, 400);
+  }
+  if (n === 2) {
+    const s = document.getElementById('screen-map');
+    const onEnd2 = () => {
+      ensureMap();
+      // Leaflet must recalculate dimensions after its initially hidden screen is shown.
+      map.invalidateSize(true);
+      if (currentRoutes.length) {
+        const route = currentRoutes[selectedRouteIdx] ||
+                      currentRoutes.find(r => r.available !== false);
+        if (route) drawRoute(route, false);
+      }
+    };
+    s.addEventListener('transitionend', onEnd2, { once: true });
+    setTimeout(onEnd2, 450);
+  }
+}
+
+function goToRoute() { goTo(1); }
+
+/* ─── Close dropdowns on outside click ─────────────────────────────── */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#originInput')) closeDrop('origin');
+  if (!e.target.closest('#destInput'))   closeDrop('dest');
+});
+
+/* ─── Init ──────────────────────────────────────────────────────────── */
+buildSliders();
+updateProfileCard();
+buildBeliefToggles();
+
+</script>
+
+</body></html>
